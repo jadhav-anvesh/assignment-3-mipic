@@ -28,6 +28,22 @@ Sources:
 
 Both sides use the same read-out (`pooler_output`, the vector `evaluate.py` probes), the same probe settings and the same train and test files.
 
+**Update, 2026-11-04: against our own seed 42 retrain (PRELIMINARY).** We retrained the models locally with identical code and settings (see Finding 4), and they score 2 to 7 points higher than the README's models. Repeating the comparison against these retrained models, base TinyBERT **still wins at every width, but the gap shrinks to about 0.2 to 2.3 points** (from 3.86 to 5.61 above).
+
+| Width | Untrained TinyBERT (pooler) | Best seed 42 model (preliminary) | Best seed 42 F1 | Gap (untrained minus best) |
+|---:|---:|:---|---:|---:|
+| 16 | 62.62 | MRL+PIC | 61.43 | +1.19 |
+| 32 | 66.12 | MRL | 63.86 | +2.26 |
+| 64 | 67.96 | MRL | 65.90 | +2.06 |
+| 128 | 69.61 | MRL | 68.64 | +0.97 |
+| 256 | 70.68 | MRL | 69.73 | +0.95 |
+| 512 | 71.63 | MRL | 70.96 | +0.68 |
+| 768 | 71.73 | MRL | 71.52 | +0.22 |
+
+Source: `h11_probe/runs/seed42/tweeteval_results.json`, `evaluations` entries for `mrl`, `mrl_pic` and `mipic`. These are the epochs chosen by the held-out probe (`best.pt`). All probe fits converged. MRL+SIA was still training when this table was written, so it isn't included. It was the weakest model in the README at every width, so it's unlikely to change the "best" column.
+
+The narrow gaps at 512D and 768D (0.68 and 0.22) are well within the rough 0.8 point standard error, so at full width base and retrained MRL are effectively tied on this evidence. MRL's last-epoch checkpoint (`mrl_last_epoch`) gets even closer at 768D (71.66, a gap of 0.07). **This is one seed. The finding will be finalised after seeds 1 and 2**, together with a paired bootstrap.
+
 **Caveats.**
 - **Single training seed.** Each trained model comes from one run, with no seed variation. `run_experiments.py` itself notes that two identical MRL runs differed by about 3 F1 at 768D before seeding was added.
 - **Not official TweetEval.** The evaluation files are the Kaggle Tweet Sentiment Extraction data, not the public TweetEval benchmark (see the README). The result may not carry over to TweetEval or to other tasks.
@@ -101,3 +117,46 @@ Source: `h11_probe/results/base_sts_clean.csv` (produced by `sts_eval.py --drop-
 - **H11** (early-layer, low-dimensional prefixes become task-useful). On STS, the base model's PIC checkpoint at (layer 2, 32D) already scores 59.29. A MIPIC advantage at that checkpoint would need to beat an already strong cell, not just improve on a weak early layer.
 
 **Prediction, recorded 2026-11-04 before any trained-model STS results.** SimCSE-trained models (MRL, MRL+PIC, MIPIC) will beat base TinyBERT on STS-B at the final layer, even though they lose to base on sentiment (Finding 1). Concretely, on the clean pairs, their `pooler_output` at 768D will exceed base's 49.56 and their layer 6 [CLS] at 768D will exceed base's 49.74. Reasoning: the SimCSE objective is contrastive on sentence pairs and is known to fix the poor cosine geometry of untrained final layers, which would help STS directly while doing nothing for, or even hurting, a linear sentiment probe.
+
+---
+
+## Finding 4. Retraining with identical code gives 2 to 7 points more than the README (PRELIMINARY, seed 42)
+
+**Claim.** Retraining MRL, MRL+PIC and MIPIC with the unmodified repository code and its default settings (seed 42, 5 epochs, lr 2e-5, global batch 16, held-out epoch selection) on one local RTX 3060 gave TweetEval macro-F1 2.00 to 7.16 points higher than the README's Kaggle run. This held for all three models at every width. The run-to-run difference is as large as, or larger than, the differences between methods that the README reports.
+
+**Evidence.** Macro-F1 (%) of the `pooler_output` probe. Local = seed 42 retrain (preliminary). README = "Current controlled results" table. Diff = local minus README.
+
+| Width | MRL local | MRL README | Diff | MRL+PIC local | MRL+PIC README | Diff | MIPIC local | MIPIC README | Diff |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 16 | 59.87 | 56.46 | +3.41 | 61.43 | 54.27 | +7.16 | 61.26 | 58.60 | +2.66 |
+| 32 | 63.86 | 59.99 | +3.87 | 62.49 | 59.85 | +2.64 | 62.55 | 60.51 | +2.04 |
+| 64 | 65.90 | 62.82 | +3.08 | 65.08 | 61.62 | +3.46 | 63.83 | 61.83 | +2.00 |
+| 128 | 68.64 | 65.57 | +3.07 | 66.10 | 62.55 | +3.55 | 65.57 | 62.65 | +2.92 |
+| 256 | 69.73 | 66.82 | +2.91 | 67.23 | 63.21 | +4.02 | 66.37 | 62.92 | +3.45 |
+| 512 | 70.96 | 67.61 | +3.35 | 69.20 | 64.27 | +4.93 | 67.24 | 64.01 | +3.23 |
+| 768 | 71.52 | 67.24 | +4.28 | 69.80 | 64.82 | +4.98 | 67.71 | 64.64 | +3.07 |
+
+Sources:
+- Local: `h11_probe/runs/seed42/tweeteval_results.json` (`evaluations.mrl`, `.mrl_pic`, `.mipic`), produced by `h11_probe/train_all.ps1 -Seed 42`. All 21 probe fits converged.
+- README: [README.md](../README.md), also in `h11_probe/expected_readme.json`.
+
+**Run-to-run differences are as big as the README's method gaps.** The README's headline MIPIC advantage over MRL at 16D is +2.1 (58.60 vs 56.46). That is smaller than 19 of the 21 local-minus-README differences above (mean +3.53), and about the same as the smallest two (+2.00 and +2.04). So a single run per model can't separate method effects of that size from run-to-run variation.
+
+**Model ranking at narrow widths in seed 42 (preliminary).**
+- At 16D, MRL+PIC (61.43) and MIPIC (61.26) are tied, 0.17 apart, and both are ahead of MRL (59.87) by 1.56 and 1.39 points.
+- At 32D the order flips: MRL (63.86) is ahead of MIPIC (62.55) by 1.31 and of MRL+PIC (62.49) by 1.37.
+- From 64D upward MRL leads, as in the README.
+
+**Caveats.**
+- **Different hardware and parallelism.** Local is one RTX 3060. The README used Kaggle with 2x T4 under DDP. The global batch is 16 in both, and the number of in-batch negatives is the same, but the numerical kernels and AMP behaviour differ.
+- **Different data order and dropout masks.** One process versus two DDP ranks gives a different shuffling of the training corpus and different dropout masks, even with the same seed. This is ordinary run-to-run randomness, and it's what this finding suggests is large.
+- **Epoch selection doesn't explain it.** Locally the held-out probe chose epoch 1 for MRL and MRL+PIC and epoch 3 for MIPIC, while the README's MIPIC used epoch 1. But the local last-epoch checkpoints (`*_last_epoch` in the same JSON) are also above the README at every width, by 0.55 to 4.42 points.
+- **Only one local seed so far.** Seeds 1 and 2 are pending. They will show whether seed 42 is a lucky draw or whether local runs are systematically higher than Kaggle. Without them, "local vs README" mixes seed variance with any systematic environment effect.
+- **Not significance-tested.** No bootstrap yet. The rough standard error of macro-F1 on 3,432 test rows is about 0.8 points, so the 16D tie between MRL+PIC and MIPIC (0.17) is a tie, and the 1.3 to 1.6 point gaps against MRL are marginal on their own.
+
+**Relates to.**
+- **H15** (SIA is essential: MIPIC without SIA, i.e. MRL+PIC, should be clearly worse than MIPIC at 16D and 32D). In seed 42 it isn't: MRL+PIC and MIPIC are tied at 16D (61.43 vs 61.26) and at 32D (62.49 vs 62.55). On this one seed, adding SIA on top of PIC gives nothing at small widths.
+- **H16** (SIA and PIC are synergistic). PIC's gain over MRL at 16D (+1.56) is already as large as MIPIC's (+1.39), which leaves no room for a positive interaction unless MRL+SIA comes out below MRL at 16D. The interaction term can be computed once MRL+SIA finishes.
+- **H18** (MIPIC's advantage is largest at 16 to 32D). It holds at 16D, but at 32D plain MRL beats MIPIC in seed 42.
+- **H17** and Finding 1. The 768D gap between MRL and MIPIC grows from 2.6 in the README to 3.8 locally (71.52 vs 67.71).
+- Every comparison between methods in the README that is smaller than about 3 points should be treated as unresolved until it is replicated over seeds.
