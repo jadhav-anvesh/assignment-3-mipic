@@ -73,16 +73,23 @@ def fit_one(row: Union[int, str], dim: int, x_train, y_train, x_test, y_test) ->
     from sklearn.exceptions import ConvergenceWarning
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import accuracy_score, f1_score
+    from threadpoolctl import threadpool_limits
 
     start = time.perf_counter()
     classifier = LogisticRegression(
         random_state=PROBE_RANDOM_STATE, max_iter=PROBE_MAX_ITER, verbose=0
     )
-    with warnings.catch_warnings():
+    # One BLAS thread and a contiguous copy make the fit bit-for-bit reproducible.
+    # With multithreaded BLAS, lbfgs rounding depends on the thread count and can
+    # stop one iteration earlier or later (measured: layer 1 at 32D gave n_iter 55
+    # or 56 and flipped 2 test predictions depending on the process).
+    x_fit = np.ascontiguousarray(x_train[:, :dim])
+    x_eval = np.ascontiguousarray(x_test[:, :dim])
+    with threadpool_limits(limits=1), warnings.catch_warnings():
         # Convergence is recorded from n_iter_ below; keep worker output quiet.
         warnings.simplefilter("ignore", ConvergenceWarning)
-        classifier.fit(x_train[:, :dim], y_train)
-    predictions = classifier.predict(x_test[:, :dim])
+        classifier.fit(x_fit, y_train)
+        predictions = classifier.predict(x_eval)
     n_iter = int(classifier.n_iter_[0])
     return {
         "layer": row,
