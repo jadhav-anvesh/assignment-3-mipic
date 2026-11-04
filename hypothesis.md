@@ -29,7 +29,7 @@ The motivating case is H1. The POS probes in [pos_probe/](pos_probe/POS_EXPERIME
 | H11 | Early-layer, low-dimensional CLS prefixes become task-useful | Stated | None | High |
 | H12 | PIC maximizes mutual information between checkpoints | Stated | None | Low |
 | H13 | The progressive (layer, dimension) schedule is necessary | Stated | Paper: ≤1.75 pt, one run | Medium |
-| H14 | PIC makes small prefixes learn task information early in training | Stated | MIPIC's best epoch was 1/5 | Medium |
+| H14 | PIC makes small prefixes learn task information early in training | Stated | MIPIC's best epoch was 1/5 (not specific to PIC; see correction) | Medium |
 | H15 | SIA is essential; removing it causes sharp drops at small sizes | Stated | Our run: MRL+SIA is worst at every width (KL on; see correction) | High |
 | H16 | SIA and PIC are synergistic | Stated | Our run: gain only at 16–32D | Medium |
 | H17 | MIPIC matches baselines at full capacity | Stated | Our run: MRL is 2.6 F1 higher at 768D | High |
@@ -277,6 +277,8 @@ Report 16D and 32D scores, split by sentence length.
 **Why test it.** This is a claim about the training trajectory, separate from the depth claim (H11). No learning curves are reported.
 
 **Evidence so far.** In our run, MIPIC's held-out probe chose epoch 1 of 5 ([MIPIC_TRAINING_README.md](MIPIC_TRAINING_README.md)). That fits fast early learning, but it is also consistent with later epochs degrading the representation.
+
+**Correction, 2026-11-04.** The epoch 1 result above can't separate H14 from general degradation, so it is not evidence for H14. In local seed 42 retrains with the current code, the held-out probe also chose epoch 1 for MRL, which has no PIC, and for MRL+PIC and MRL+SIA. KL-off MIPIC is the only run that chose a later epoch (epoch 3, 0.17 above epoch 1 on a nearly flat curve). On the test set, the selected checkpoint beats the last epoch by up to 2.16 (MRL), 3.94 (MRL+PIC) and 3.67 (MRL+SIA) points. So a best epoch of 1 means further training hurts this probe in general, with or without PIC. Epoch selection also uses the pooler probe, not the 16D and 32D prefixes H14 is about. H14 remains untested; the per-epoch test below is still needed. This is preliminary (one seed). Details in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md), Finding 8.
 
 **Test.** Evaluate each epoch's checkpoint at every width for MRL and MIPIC. Report the area under the learning curve and the best epoch.
 
