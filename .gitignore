@@ -30,6 +30,7 @@ checkpoints/
 wandb/
 tensorboard/
 h11_probe/features/
+h11_probe/runs/
 
 # Model and optimizer artifacts
 *.ckpt
