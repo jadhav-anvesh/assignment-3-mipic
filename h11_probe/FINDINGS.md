@@ -555,3 +555,22 @@ The trained pooler weights rotate the output a little (row cosine 0.93 to 0.95) 
 - **Finding 1**: base's read-out is this random projection, and the trained models' scale change is what biases the unscaled small probes.
 - **H3** and the pooling notes in hypothesis.md: MRL on `pooler_output` constrains random mixtures of hidden coordinates, not the coordinates themselves.
 - **H11 and H14** (PIC): the PIC models move the early layers most, consistent with PIC acting on the early checkpoints (Finding 6).
+
+---
+
+## To do after seeds 1 and 2
+
+Not run yet. Seed 1 still needs MIPIC and MRL+SIA trained (the seed 1 run was stopped during MIPIC), and seed 2 hasn't been trained.
+
+1. **Repeat the Finding 1 checks that depend on the seed**, for each seed's four models against base:
+   - check 4, the paired bootstrap of the pooler row (`bootstrap.py`);
+   - check 6, the scaled, CV-tuned probe at 250, 1,000, 3,000 and 26,732 rows (`probe_tuned.py`);
+   - check 7, kNN (`probe_knn.py`);
+   - check 8, the epoch selection probe on each `best.pt` (`selection_probe.py`, with the seed's checkpoints and an `--out` per seed).
+2. **Repeat the Finding 9 measurements:**
+   - pooler and encoder drift (`weight_drift.py`, with `--runs-dir` and `--tag` for the seed);
+   - the pooler swap in both directions. `pooler_swap.py` covers base h6 through each trained pooler; the reverse, each model's trained h6 through base's pooler, still needs a script. Keep each seed's layer 6 features on disk until both directions are done.
+3. **Paired bootstrap on STS-B**, clean pairs, so the Finding 1 scope table has CIs: trained model minus base at (6,768) raw [CLS] and along the pooler row. This needs a new script; `bootstrap.py` handles macro-F1 only.
+4. **Cross-seed summary.** For every result above, the mean and spread across seeds 42, 1 and 2, and whether the sign agrees in all three. No script exists yet.
+
+Findings 1, 6, 7, 8 and 9 stay PRELIMINARY until these are done.
