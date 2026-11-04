@@ -3,7 +3,8 @@
 For layers 1-6 this saves hidden_states[layer][:, 0, :] (all 768 coordinates,
 float16) for the tweet sentiment train and test splits, so prefixes of any width
 can be probed later without re-running the encoder. hidden_states[0] is the
-embedding output, so layer L is hidden_states[L].
+embedding output, so layer L is hidden_states[L]. It also saves pooler_output,
+the vector evaluate.py probes, as {split}_pooler.npy.
 
 Example, from the repository root:
     python h11_probe/extract_cls.py --name base --limit 200
@@ -18,7 +19,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -33,6 +34,7 @@ from tqdm import tqdm  # noqa: E402
 from h11_probe.load_encoder import load_encoder  # noqa: E402
 
 LAYERS = (1, 2, 3, 4, 5, 6)
+FEATURE_KEYS: Tuple[Union[int, str], ...] = LAYERS + ("pooler",)
 SPLITS = {
     "train": REPO_ROOT / "data" / "tweet_train.csv",
     "test": REPO_ROOT / "data" / "tweet_test.csv",
@@ -56,10 +58,11 @@ def extract_split(
     batch_size: int,
     max_length: int,
     desc: str,
-) -> Dict[int, np.ndarray]:
+) -> Dict[Union[int, str], np.ndarray]:
+    """Return {layer: [CLS] matrix} for layers 1-6 plus {"pooler": pooler_output}."""
     device = next(encoder.parameters()).device
     loader = DataLoader(texts, batch_size=batch_size, shuffle=False, num_workers=0)
-    chunks: Dict[int, List[np.ndarray]] = {layer: [] for layer in LAYERS}
+    chunks: Dict[Union[int, str], List[np.ndarray]] = {key: [] for key in FEATURE_KEYS}
     with torch.no_grad():
         for batch in tqdm(loader, desc=desc, unit="batch"):
             encoded = tokenizer(
@@ -72,7 +75,13 @@ def extract_split(
             output = encoder(**encoded, output_hidden_states=True, return_dict=True)
             for layer in LAYERS:
                 chunks[layer].append(output.hidden_states[layer][:, 0, :].float().cpu().numpy())
-    return {layer: np.concatenate(parts, axis=0) for layer, parts in chunks.items()}
+            # The Linear+Tanh head that evaluate.py and the README numbers read.
+            chunks["pooler"].append(output.pooler_output.float().cpu().numpy())
+    return {key: np.concatenate(parts, axis=0) for key, parts in chunks.items()}
+
+
+def feature_filename(split: str, key: Union[int, str]) -> str:
+    return f"{split}_pooler.npy" if key == "pooler" else f"{split}_layer{key}.npy"
 
 
 def to_checked_float16(array: np.ndarray, label: str) -> np.ndarray:
@@ -110,6 +119,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         "batch_size": args.batch_size,
         "limit": args.limit,
         "layers": list(LAYERS),
+        "pooler": True,
         "dtype": "float16",
         "device": device,
         "date": datetime.now().isoformat(timespec="seconds"),
@@ -127,11 +137,11 @@ def main(argv: Optional[List[str]] = None) -> None:
 
         # Check everything before writing anything for this split.
         checked = {
-            layer: to_checked_float16(array, f"{split} layer {layer}")
-            for layer, array in features.items()
+            key: to_checked_float16(array, f"{split} {key if key == 'pooler' else f'layer {key}'}")
+            for key, array in features.items()
         }
-        for layer, array in checked.items():
-            np.save(target / f"{split}_layer{layer}.npy", array)
+        for key, array in checked.items():
+            np.save(target / feature_filename(split, key), array)
         np.save(target / f"{split}_labels.npy", labels)
 
         meta["rows"][split] = len(labels)
