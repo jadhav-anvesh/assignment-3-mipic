@@ -6,9 +6,71 @@ All probe numbers are macro-F1 (%) on the 3-class tweet sentiment test split (3,
 
 ---
 
-## Finding 1. Untrained TinyBERT beats every trained model at every width
+## Finding 1. Pretrained TinyBERT, read through its untrained random pooler, matches or beats every trained model on the sentiment probe (PRELIMINARY, seed 42)
 
-**Claim.** The frozen, untrained TinyBERT-6L `pooler_output` scores higher than the best of the four trained models (MRL, MRL+SIA, MRL+PIC, MIPIC) in the README at every nested width from 16 to 768. The gap is 3.86 to 5.61 macro-F1 points. On this evaluation, none of the training recipes improves on the starting backbone.
+**Claim.** On this tweet sentiment probe, pretrained TinyBERT-6L read through its untrained, random pooler (`pooler_output`, a fixed random projection of the layer 6 [CLS]; see Finding 9) matches or beats all four seed 42 trained models (MRL, MRL+SIA, MRL+PIC, MIPIC) at every width from 16 to 768. This holds with the default probe and with a scaled, CV-tuned probe, at probe sizes from 250 to 26,732 rows, and with training-free kNN. No trained model is significantly better than base in any cell; base is significantly better in 19 of 28 cells (paired bootstrap, default probe). An unscaled probe fitted on few rows reverses the result, because the trained models' pooler features are about twice base's scale, and the probe that `run_experiments.py` uses to choose the epoch shares that bias. PRELIMINARY: one training seed.
+
+**Scope: sentiment only.** This finding is about the sentiment probe. On STS-B (clean pairs: 1,261 pairs after dropping those that appear in the training corpus), the same trained models clearly beat base at the final layer. Spearman x 100:
+
+| Read-out | base | MRL | MRL+PIC | MIPIC | MRL+SIA |
+|---|---:|---:|---:|---:|---:|
+| Raw [CLS], layer 6, 768D (PIC checkpoint (6,768)) | 49.74 | 65.53 | 62.99 | 66.75 | 64.78 |
+| Pooler, 16D | 42.00 | 55.38 | 53.66 | 59.57 | 57.74 |
+| Pooler, 64D | 47.54 | 61.67 | 58.11 | 64.40 | 62.09 |
+| Pooler, 768D | 49.56 | 65.45 | 62.54 | 66.52 | 65.06 |
+
+Source: `h11_probe/results/{base,mrl_s42,mrl_pic_s42,mipic_s42,mrl_sia_s42}_sts_clean.csv`, from `sts_eval.py --drop-overlap`. The trained models lead by 13 to 17 points at (6,768) and by 10.6 to 17.6 points at every width of the pooler row; no bootstrap has been run on STS-B. So training is not useless: it moves the representation toward sentence similarity, at the expense of sentiment information.
+
+### Verification (nine checks, seed 42)
+
+| # | Check | Result | Effect on the claim | Files |
+|---|---|---|---|---|
+| 1 | Is base's pooler pretrained? | No. Its weight is indistinguishable from iid Gaussian noise (kurtosis 3.003; top singular value 1.001x the Marchenko-Pastur edge; row-norm CV 0.0252 against 0.0255 for iid), and its bias is exactly zero. All 36 trained encoder matrices in the same checkpoint have singular value ratios of 1.29 to 8.63 and row-norm CVs of 0.063 to 0.436. The tanh is near linear on real inputs (largest pre-activation 0.134, largest relative gap 0.59%). Training barely moves the pooler (cosine to base 0.995 to 0.999) | Corrects the description of base; the comparison is still like for like | `pooler_check.py` -> `results/pooler_check.csv`; `weight_drift.py` -> `results/weight_drift_s42.csv` |
+| 2 | Same pipeline on both sides | Same loader, tokenizer, max_length 256, float32 features, read-out and files (26,732 / 3,432 rows, identical labels). Refitting base's pooler row with today's code gives identical predictions at all 7 widths | Confirms | `refit_check.py` -> `results/refit_check_base.csv`; `results/base_grid.csv`, `results/*_s42_grid.csv` |
+| 3 | Overlap with the training corpus | No test row appears in `final_data.csv`. All 3,000 TWEET_EVAL_SENT corpus rows are in `tweet_train.csv` (11.2% of the probe-train split; labels 841 / 1,249 / 910). That exposure can only help the trained models | Confirms | `overlap_check.py` -> `results/overlap_check.txt` |
+| 4 | Paired bootstrap, pooler row, full probe | No trained model is significantly above base at any width. Base is significantly ahead in 19 of 28 cells. The best trained cell is MRL+SIA at 16D: +0.57 [-1.03, +2.21] | Confirms | `results/bootstrap_{mrl,mrl_pic,mipic,mrl_sia}_s42_vs_base.csv`, rows with `layer = pooler` |
+| 5 | Probe size, default (unscaled) probe | At 16D and 64D with 250 to 1,000 rows, the trained models lead by 4.2 to 31.4 points on average, and are ahead on every subset; base's probe is close to a one-class predictor there. Base catches up at about 10,000 rows. At 768D base ties or wins from 500 rows up | Weakens, then explained by check 6 | `probe_size.py` -> `results/probe_size_s42.csv`, `results/probe_size_s42_summary.csv` |
+| 6 | Scaled probe, C tuned by 5-fold CV, same subsets as check 5 | Base recovers completely. It beats the trained model on every subset in 45 of 48 (model, size, width) cells. The exceptions are all MRL+SIA at 16D: -0.07 at 1,000 rows, +0.47 at 3,000, +0.53 at full size. At full size base leads at 768D by 1.48 to 4.87 points | Confirms; the check 5 gap was a feature-scale artifact | `probe_tuned.py` -> `results/probe_tuned_s42.csv`, `results/probe_tuned_s42_summary.csv` |
+| 7 | kNN, no fitted classifier (k = 10 and 50; cosine and raw Euclidean) | Base is top in 11 of 12 cells. The exception is raw Euclidean, k = 10, 16D: MRL+SIA ahead by 0.15. L2-normalised Euclidean reproduces cosine exactly, as it must | Confirms | `probe_knn.py` -> `results/probe_knn_s42.csv` |
+| 8 | Epoch selection probe (`evaluate.validation_probe_score`, as in `run_experiments.py`) | Base scores 63.16. Epoch 1 scores: MRL 65.37, MRL+PIC 64.56, MIPIC 62.42, MRL+SIA 65.64. Rescoring each `best.pt` reproduces its logged score | Weakens for the selection metric only. That probe is unscaled and fits on 4,800 rows, the regime where checks 5 and 6 show a scale bias (inferred, not rerun with scaling) | `selection_probe.py` -> `results/selection_probe_s42.csv`; `runs/seed42/logs/{mrl,mrl_pic,mipic,mrl_sia}.log` |
+| 9 | What the paper and repo files say | `LEXIS_A1.pdf` reports no untrained baseline: Table 1 (p.3) lists SimCSE, MRL, ESE and MIPIC; Section 6.1 (p.6) evaluates "the four trained models"; Table 3 (p.7) lists those four only. `README.md` and `MIPIC_TRAINING_README.md` give no baseline numbers. Two code comments do: `evaluate.py` lines 28 to 32 (untrained TinyBERT-6L, 62.62 to 71.99 on 26,732 rows) and `run_experiments.py` lines 523 to 525 ("62.52 macro-F1 at d=768 against 70.55 for the untrained backbone"). `hypothesis.md` uses base TinyBERT only as a planned control | Neutral; the baseline is missing from the report | The files named |
+
+Probe-size details (checks 5 and 6), mean macro-F1 over 5 subsets at 16D:
+
+| Probe rows | Probe | base | MRL | MRL+PIC | MIPIC | MRL+SIA |
+|---:|---|---:|---:|---:|---:|---:|
+| 250 | default | 21.0 | 31.2 | 44.7 | 47.4 | 38.9 |
+| 250 | scaled, tuned | **59.1** | 55.9 | 57.1 | 56.8 | 57.8 |
+| 1,000 | default | 26.0 | 48.9 | 56.7 | 57.4 | 57.2 |
+| 1,000 | scaled, tuned | **62.1** | 59.0 | 60.2 | 60.2 | 62.1 |
+| 26,732 | default | 62.6 | 59.9 | 61.4 | 61.2 | **63.2** |
+| 26,732 | scaled, tuned | 63.0 | 60.1 | 61.7 | 61.3 | **63.5** |
+
+Mean per-coordinate SD of the pooler features (printed by `probe_size.py`): base 0.0129, MRL 0.0232, MRL+SIA 0.0230, MIPIC 0.0270, MRL+PIC 0.0280. Under the default probe's fixed C = 1, base's smaller features are regularised much harder, which is why its small-probe fits collapse (accuracy 39 to 43%, macro-F1 21 to 26, close to always predicting neutral). In check 6 the chosen C at 768D is mostly 0.01, the bottom of the grid, so a wider grid could move those cells slightly.
+
+### What it means for the MIPIC paper
+
+**It does show:** in this reproduction, training adds no sentiment information at any width. So the ranking of MRL, SIA, PIC and MIPIC here measures how much each one loses against the backbone, not how much each gains. The report should include the untrained baseline.
+
+**It doesn't show:** that the paper's numbers are wrong. The paper reports no untrained baseline and uses different data, so we can't tell whether its trained models beat their own backbone. It also says nothing about the paper's other tasks or backbones.
+
+**Caveats.**
+- **One training seed.** Checks 1 (the pooler drift part), 4, 6, 7 and 8 should be repeated on seeds 1 and 2. Checks 2, 3 and 9 don't depend on the seed, and check 6 supersedes check 5.
+- **Not official TweetEval.** The evaluation files are the Kaggle Tweet Sentiment Extraction data (see the README and `LEXIS_A1.pdf` Section 3.1).
+- **STS-B has no CIs.** The STS-B gaps are large, but no bootstrap was run on them.
+
+**Relates to.**
+- **H17** (MIPIC matches baselines at full capacity). The right baseline includes the backbone. In seed 42, MIPIC's pooler at 768D is 3.96 [2.67, 5.29] points below base (`results/bootstrap_mipic_s42_vs_base.csv`).
+- **Finding 9** (the random pooler), which explains what base's read-out is.
+- **Finding 8**, whose epoch selection uses the probe that check 8 shows is biased by feature scale.
+
+### History
+
+The original claim and its evidence, kept as a record. They are superseded by the claim and verification above.
+
+#### Original claim (against the README models)
+
+The frozen, untrained TinyBERT-6L `pooler_output` scores higher than the best of the four trained models (MRL, MRL+SIA, MRL+PIC, MIPIC) in the README at every nested width from 16 to 768. The gap is 3.86 to 5.61 macro-F1 points. On this evaluation, none of the training recipes improves on the starting backbone.
 
 **Evidence.**
 
@@ -28,7 +90,9 @@ Sources:
 
 Both sides use the same read-out (`pooler_output`, the vector `evaluate.py` probes), the same probe settings and the same train and test files. Note that the README models were trained with an older code version (MIPIC_FINAL_V20, attention KL on), not the code currently in this repository (see Finding 5).
 
-**Update, 2026-11-04: against our own seed 42 retrain (PRELIMINARY).** We retrained all four models locally with the current repository code and its default settings (see Findings 4 and 5), and they score 2 to 11 points higher than the README's models. Repeating the comparison against these retrained models, **the gap shrinks to between -0.57 and +1.33 points** (from 3.86 to 5.61 above). Base still wins at 32D to 768D, but **at 16D MRL+SIA is 0.57 points ahead of base**, so the headline claim of this finding doesn't hold at every width in seed 42.
+#### Update, 2026-11-04: against our own seed 42 retrain
+
+We retrained all four models locally with the current repository code and its default settings (see Findings 4 and 5), and they score 2 to 11 points higher than the README's models. Repeating the comparison against these retrained models, **the gap shrinks to between -0.57 and +1.33 points** (from 3.86 to 5.61 above). Base still wins at 32D to 768D, but **at 16D MRL+SIA is 0.57 points ahead of base**, so the headline claim of this finding doesn't hold at every width in seed 42.
 
 | Width | Untrained TinyBERT (pooler) | Best seed 42 model (preliminary) | Best seed 42 F1 | Gap (untrained minus best) |
 |---:|---:|:---|---:|---:|
@@ -44,14 +108,19 @@ Source: `h11_probe/runs/seed42/tweeteval_results.json`, `evaluations` entries fo
 
 Every gap in this table except 64D (1.33) is within the rough 0.8 point standard error, so on this evidence the best retrained model and base are effectively tied at most widths. Neither side clearly wins. MRL's last-epoch checkpoint (`mrl_last_epoch`) gets even closer at 768D (71.66, a gap of 0.07). **This is one seed. The finding will be finalised after seeds 1 and 2**, together with a paired bootstrap.
 
-**Caveats.**
+The paired bootstrap has since been run (verification check 4): MRL+SIA's 0.57 point lead at 16D has a CI of [-1.03, +2.21], so it is not significant. The values in this table come from `tweeteval_results.json` and differ by up to 0.23 from the `*_s42_grid.csv` refits on re-extracted features used in the verification (MRL at 768D: 71.52 here, 71.29 in the grid; at 512D: 70.96 and 71.13). With the grid values, base leads MRL at 768D by 0.44 rather than 0.22.
+
+#### Original caveats and links
+
+Kept as written. "Not yet significance-tested" is addressed by check 4, and the description of the read-out is corrected by check 1.
+
 - **Single training seed.** Each trained model comes from one run, with no seed variation. `run_experiments.py` itself notes that two identical MRL runs differed by about 3 F1 at 768D before seeding was added.
 - **Not official TweetEval.** The evaluation files are the Kaggle Tweet Sentiment Extraction data, not the public TweetEval benchmark (see the README). The result may not carry over to TweetEval or to other tasks.
 - **Different environment.** The README numbers were produced on Kaggle (2x T4), and our base numbers were produced locally (RTX 3060, sklearn 1.9.0). As a cross-check, our rerun reproduces the untrained-backbone numbers quoted in the `evaluate.py` comment (62.62 to 71.99) to within 0.26 points at every width. That is far smaller than the 3.86 point minimum gap here.
 - **Epoch selection is not documented for every model.** MIPIC's README numbers come from the epoch the held-out probe selected (epoch 1 of 5). The README doesn't say which epoch the other three models' numbers come from.
 - **Not yet significance-tested.** A paired bootstrap on the saved predictions is still to do. A gap of at least 3.86 points is large relative to the roughly 0.8 point standard error of macro-F1 on 3,432 test rows, but no formal test has been run.
 
-**Relates to.**
+Original links:
 - **H17** (MIPIC matches baselines at full capacity). The right baseline includes the untrained backbone, and on this evaluation every trained model is below it. MIPIC is 7.09 points below untrained TinyBERT at 768D (64.64 vs 71.73).
 - **H14** (PIC makes small prefixes learn task information early in training). MIPIC's held-out probe preferred epoch 1 of 5 ([MIPIC_TRAINING_README.md](../MIPIC_TRAINING_README.md)). Together with this finding, that fits training degrading the encoder for this task rather than PIC speeding up learning. `run_experiments.py` makes a similar note: the contrastive loss is essentially solved within one epoch, and later epochs lowered MRL's 768D score to 62.52 against 70.55 for the untrained backbone.
 
@@ -423,8 +492,66 @@ MIPIC (KL off) is the only exception, and its curve is nearly flat: epoch 3 beat
 **Caveats.**
 - **Pooler only.** Selection and this comparison use the pooler probe. The raw [CLS] cells of Finding 6 were measured only on the selected checkpoint.
 - **No per-epoch checkpoints at the early cells.** Only `best.pt` and the last epoch's scores are kept, so learning curves at (1,16) and (2,32) can't be drawn from these runs.
+- **The selection metric is biased by feature scale.** `validation_probe_score` fits an unscaled logistic regression with C = 1 on 4,800 rows and averages over all seven widths, including 16D and 32D. Finding 1 (checks 5 and 6) shows that this setting favours the trained models simply because their pooler features are about twice base's scale. Base itself scores 63.16 on this metric, below the epoch 1 scores of MRL (65.37), MRL+PIC (64.56) and MRL+SIA (65.64), although base beats all of them on the full and the scaled probes. So the held-out curve in the table is not a clean measure of sentiment information, and it never registered that training was making the encoder worse than base. Whether the scale bias also shapes the choice between epochs (for example if feature scale grows with epochs) is untested; it would need the selection probe rerun with scaling on per-epoch checkpoints, which these runs don't keep. Source: `h11_probe/selection_probe.py` -> `h11_probe/results/selection_probe_s42.csv`.
 - **One training seed.**
 
 **Relates to.**
 - **H14** (PIC makes small prefixes learn task information early in training). The current evidence in hypothesis.md ("MIPIC's best epoch was 1/5") does not distinguish H14 from general degradation after epoch 1, because MRL without PIC also peaks at epoch 1 and locally MIPIC is the one run that doesn't. A real test of H14 needs probe scores at 16D and 32D (raw [CLS] at layers 1 and 2) for every epoch of MRL and MIPIC, as the H14 test in hypothesis.md already proposes.
 - **Finding 1**, H14 bullet, which already noted that epoch 1 selection fits training degrading the encoder.
+
+---
+
+## Finding 9. The sentence embedding is a random projection: TinyBERT's pooler was never trained, and training changes the embedding through the encoder (PRELIMINARY, seed 42)
+
+**Claim.** `huawei-noah/TinyBERT_General_6L_768D` ships a pooler that was never trained. Its weight is indistinguishable from iid Gaussian noise, its bias is exactly zero, and on real inputs its tanh is within 0.6% of linear. So base's `pooler_output`, the z that the Matryoshka loss truncates, is about R h6: a fixed random projection of the layer 6 [CLS], shrunk about 9x. "The first d dimensions" of z means d random directions of h6, not d hidden coordinates.
+
+Contrastive training changes the pooler's weights by more, relative to their size, than it changes the encoder's. But the pooler change has almost no effect on the probe: on base's layer 6 features, every trained pooler gives the same feature scale and the same sentiment F1 as base's own pooler. The trained models' larger feature scale (about 2x) and their lower sentiment F1 both come from the change in the layer 6 [CLS], that is, from the encoder, even though no encoder layer's weights move by more than 2.7%.
+
+**Evidence: the pooler is untrained.** From `h11_probe/pooler_check.py` -> `h11_probe/results/pooler_check.csv`:
+
+| Statistic | Pooler weight (768x768) | iid Gaussian expectation | 36 trained encoder matrices, same checkpoint |
+|---|---:|---:|---:|
+| Kurtosis (Gaussian = 3) | 3.003 | 3 | 3.13 to 514 (median 5.10) |
+| Top singular value / Marchenko-Pastur edge | 1.001 | about 1 | 1.29 to 8.63 |
+| Row-norm CV | 0.0252 | 0.0255 | 0.063 to 0.436 |
+
+- The pooler bias is exactly zero, as are all four bias tensors of the pretraining heads in the hub checkpoint (`cls.*`).
+- On base's test layer 6 [CLS], the largest pre-activation is 0.134 and the largest relative tanh gap is 0.59%. Layer 6 [CLS] has mean per-coordinate SD 0.123; the pooler output has 0.0130.
+- Kurtosis alone would not settle it, since some trained attention matrices are also close to 3 (the lowest is 3.13). The singular value and row-norm statistics separate the pooler from every trained matrix.
+- As a random projection, the pooler costs little: base's pooler prefix scores 62.62 at 16D, against 62.16 for the first 16 raw coordinates of layer 6 [CLS] (`results/base_grid.csv`). At 768D the raw layer 6 [CLS] is ahead (73.51 against 71.73).
+
+**Evidence: where training acts.** Relative weight change, ||W_trained - W_base|| / ||W_base|| over each group, from `h11_probe/weight_drift.py` -> `h11_probe/results/weight_drift_s42.csv` (`best.pt` checkpoints):
+
+| Group | MRL | MRL+SIA | MRL+PIC | MIPIC |
+|---|---:|---:|---:|---:|
+| Embeddings | 0.49% | 0.53% | 0.65% | 1.14% |
+| Layers 1 to 6 | 0.30 to 0.52% | 0.41 to 0.57% | 0.67 to 1.22% | 1.16 to 2.63% |
+| Whole encoder, excluding pooler | 0.45% | 0.50% | 0.88% | 1.62% |
+| Pooler | 4.26% | 4.59% | 4.86% | 10.45% |
+| Pooler cosine to base | 0.9991 | 0.9989 | 0.9988 | 0.9946 |
+
+The PIC models move the early layers most (MRL+PIC: 1.16% and 1.22% at layers 1 and 2, down to 0.67% at layer 6; MIPIC: 2.63% at layer 1, down to 1.16% at layer 6), while MRL and MRL+SIA move the late layers slightly more than the early ones.
+
+Pooler swap, from `h11_probe/pooler_swap.py` -> `h11_probe/results/pooler_swap_s42.csv`: base's layer 6 [CLS] features passed through each trained pooler, with the default probe:
+
+| Pooler weights (on base h6) | Feature SD / base | Row cosine to base output | F1 16D | F1 64D | F1 768D |
+|---|---:|---:|---:|---:|---:|
+| base | 1.000 | 1.000 | 62.65 | 68.04 | 71.80 |
+| MRL | 0.994 | 0.949 | 62.88 | 67.91 | 71.80 |
+| MRL+SIA | 0.997 | 0.950 | 62.83 | 68.14 | 71.80 |
+| MRL+PIC | 0.977 | 0.954 | 62.79 | 68.02 | 71.94 |
+| MIPIC | 0.983 | 0.927 | 63.60 | 67.95 | 72.01 |
+
+The trained pooler weights rotate the output a little (row cosine 0.93 to 0.95) but keep its scale and its sentiment F1: every swapped cell is within -0.13 to +0.95 of base. By contrast, the trained models' own pooler features (trained pooler on trained h6) have mean SD 0.0230 to 0.0280 against base's 0.0129, and score 0.44 to 3.96 points below base at 768D (`results/*_s42_grid.csv`; CIs in Finding 1, check 4). So the scale change and the sentiment loss come from h6. (The base row here is recomputed in float64 on CPU and differs from `base_grid.csv` by up to 0.08.)
+
+**What it means for where the Matryoshka loss acts.** The loss is applied to prefixes of z = tanh(W h6 + b), with W random and nearly frozen in effect. To make the first 16 or 64 coordinates of z useful, training has to reshape h6 so that the contrastive signal falls along the fixed random directions picked out by the first rows of W. That happens through small changes spread over the encoder (well under 3% per layer), which double h6's scale and, on this task, remove some sentiment information. Any "Matryoshka ordering" lives in this near-random basis, not in the hidden coordinates of h6. This supports the pooling concerns in [hypothesis.md](../hypothesis.md) (lines 68 and 372).
+
+**Caveats.**
+- **One direction of the swap only.** The swap holds h6 at base and changes the pooler. The reverse (trained h6 through base's pooler) needs the trained models' layer 6 features, which were deleted to free disk space; re-extracting them takes a GPU pass. The two effects need not add up exactly.
+- **Weight change is not effect size.** Relative Frobenius change says how far parameters moved, not how much the function changed; the swap is the functional evidence.
+- **One training seed.**
+
+**Relates to.**
+- **Finding 1**: base's read-out is this random projection, and the trained models' scale change is what biases the unscaled small probes.
+- **H3** and the pooling notes in hypothesis.md: MRL on `pooler_output` constrains random mixtures of hidden coordinates, not the coordinates themselves.
+- **H11 and H14** (PIC): the PIC models move the early layers most, consistent with PIC acting on the early checkpoints (Finding 6).
