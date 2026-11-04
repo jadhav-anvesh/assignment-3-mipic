@@ -31,6 +31,7 @@ wandb/
 tensorboard/
 h11_probe/features/
 h11_probe/runs/
+h11_probe/runs_kl/
 
 # Model and optimizer artifacts
 *.ckpt

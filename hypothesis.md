@@ -30,7 +30,7 @@ The motivating case is H1. The POS probes in [pos_probe/](pos_probe/POS_EXPERIME
 | H12 | PIC maximizes mutual information between checkpoints | Stated | None | Low |
 | H13 | The progressive (layer, dimension) schedule is necessary | Stated | Paper: ≤1.75 pt, one run | Medium |
 | H14 | PIC makes small prefixes learn task information early in training | Stated | MIPIC's best epoch was 1/5 | Medium |
-| H15 | SIA is essential; removing it causes sharp drops at small sizes | Stated | Our run: MRL+SIA is worst at every width | High |
+| H15 | SIA is essential; removing it causes sharp drops at small sizes | Stated | Our run: MRL+SIA is worst at every width (KL on; see correction) | High |
 | H16 | SIA and PIC are synergistic | Stated | Our run: gain only at 16–32D | Medium |
 | H17 | MIPIC matches baselines at full capacity | Stated | Our run: MRL is 2.6 F1 higher at 768D | High |
 | H18 | MIPIC's advantage is largest at 16–32 dimensions | Stated | Our run: consistent | Medium |
@@ -293,6 +293,8 @@ Report 16D and 32D scores, split by sentence length.
 **Why test it.** Table 3 shows drops of 2.0–3.3 points at 16D and 32D, from one run on two datasets with an unnamed backbone. "Proving" is too strong for that evidence.
 
 **Evidence so far.** Against, in our TinyBERT run: MRL+SIA had the *lowest* F1 of the four variants at every width (53.26 at 16D against MRL's 56.46; 59.53 at 768D against 67.24). SIA alone hurt. The code ran without the attention-KL term (H6), so this tests the CKA part of SIA.
+
+**Correction, 2026-11-04.** The last sentence above is wrong. The run behind these numbers had the attention KL term **on** (see the H6 correction), so it tested CKA plus KL, not CKA alone. A local seed 42 retrain with the current code (KL off) gives MRL+SIA 63.19 at 16D and 71.00 at 768D, ahead of MRL at 16D to 64D (+3.32, +1.90, +0.73) and 0.2 to 0.7 behind from 128D up. So "SIA alone hurt" holds only for SIA with KL on. This is preliminary (one seed, pending seeds 1 and 2 and a KL-on retrain). Details in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md), Findings 4 and 5.
 
 **Test.** Run MRL, MRL+SIA, MRL+PIC and MIPIC with at least 3 seeds, crossed with KL on/off and α ∈ {0.4, 0.7}, at the paper's settings. Report mean ± std.
 
