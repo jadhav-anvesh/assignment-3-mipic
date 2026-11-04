@@ -163,6 +163,8 @@ Also report the part-of-speech distribution of the selected tokens.
 
 **Evidence so far.** The current code turns the term off (`use_attention_kl=False` in [models/mrl_sia_pic.py](models/mrl_sia_pic.py)), and the local checkpoint folder is named `results_no_kl`. Check the recorded run's log to confirm whether KL was on.
 
+**Correction, 2026-11-04.** The recorded run's log has now been checked: KL was **on** in the run behind the README numbers. The MRL+SIA training summary in notebook cell 29 logs `sia_attn_loss` of 0.0987, 0.0413, 0.0608, 0.0627 and 0.0827 for epochs 1 to 5. A local rerun of the current code logs 0.0000. The README run used an older code version (MIPIC_FINAL_V20); `use_attention_kl=False` was hardcoded later. KL was very likely on for MIPIC too (its epoch 1 `sia_loss` was 0.1634 against 0.0480 with KL off). The sentence above is still true of the current code, but not of the reported results. Details in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md), Finding 5.
+
 **Test.** Train MIPIC with and without KL, using several seeds. Measure the Kendall τ between the rankings from a_i and a_D, and the top-k overlap. Compare TweetEval and STS scores at 16D and 32D.
 
 ### H7. Aligning the whole sequence saturates small prefixes; top-k denoises
