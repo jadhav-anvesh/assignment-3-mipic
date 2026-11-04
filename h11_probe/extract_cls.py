@@ -1,7 +1,7 @@
 """Extract per-layer [CLS] vectors for the H11 early-layer probe.
 
 For layers 1-6 this saves hidden_states[layer][:, 0, :] (all 768 coordinates,
-float16) for the tweet sentiment train and test splits, so prefixes of any width
+float32) for the tweet sentiment train and test splits, so prefixes of any width
 can be probed later without re-running the encoder. hidden_states[0] is the
 embedding output, so layer L is hidden_states[L]. It also saves pooler_output,
 the vector evaluate.py probes, as {split}_pooler.npy.
@@ -84,15 +84,14 @@ def feature_filename(split: str, key: Union[int, str]) -> str:
     return f"{split}_pooler.npy" if key == "pooler" else f"{split}_layer{key}.npy"
 
 
-def to_checked_float16(array: np.ndarray, label: str) -> np.ndarray:
-    half = array.astype(np.float16)
-    bad = ~np.isfinite(half)
+def to_checked_float32(array: np.ndarray, label: str) -> np.ndarray:
+    # float32, not float16: evaluate.py probes float32 features, and float16
+    # rounding alone moved the base pooler probe by up to 0.19 macro-F1.
+    single = array.astype(np.float32)
+    bad = ~np.isfinite(single)
     if bad.any():
-        raise ValueError(
-            f"{label}: {int(bad.sum())} non-finite values after float16 cast "
-            f"(float32 max |x| = {float(np.abs(array).max()):.1f})"
-        )
-    return half
+        raise ValueError(f"{label}: {int(bad.sum())} non-finite values in float32 features")
+    return single
 
 
 def main(argv: Optional[List[str]] = None) -> None:
@@ -120,7 +119,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         "limit": args.limit,
         "layers": list(LAYERS),
         "pooler": True,
-        "dtype": "float16",
+        "dtype": "float32",
         "device": device,
         "date": datetime.now().isoformat(timespec="seconds"),
         "rows": {},
@@ -137,7 +136,7 @@ def main(argv: Optional[List[str]] = None) -> None:
 
         # Check everything before writing anything for this split.
         checked = {
-            key: to_checked_float16(array, f"{split} {key if key == 'pooler' else f'layer {key}'}")
+            key: to_checked_float32(array, f"{split} {key if key == 'pooler' else f'layer {key}'}")
             for key, array in features.items()
         }
         for key, array in checked.items():

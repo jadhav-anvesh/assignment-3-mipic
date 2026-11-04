@@ -1,7 +1,7 @@
 """Check that dynamic padding does not change the saved [CLS] vectors.
 
 Recomputes layer 6 [CLS] for the first few test sentences one at a time (no
-batching, no padding) and compares them with the batched float16 values saved by
+batching, no padding) and compares them with the batched values saved by
 extract_cls.py. The checkpoint and max_length are read from the feature folder's
 meta.json, so the check always uses the encoder that produced the features.
 
@@ -63,11 +63,11 @@ def main(argv: Optional[List[str]] = None) -> None:
         print(f"row {i}: tokens={enc['input_ids'].shape[1]:3d}  max|x|={np.abs(cls).max():6.3f}  "
               f"max abs diff={diff.max():.5f}  rel={rel:.2e}  allclose={ok}")
 
-    # A float16 value near |x| has spacing about |x| * 2**-10; half of that is the rounding error.
-    print(f"worst abs diff {worst:.5f}; float16 half-spacing at max |x| = "
-          f"{np.abs(saved[: args.rows]).max() * 2**-11:.5f}")
+    # With float32 features any remaining gap is GPU arithmetic order between the
+    # batched and single-sentence kernels; the allclose tolerance is deliberately loose.
+    print(f"worst abs diff {worst:.6f} (saved dtype {meta.get('dtype', 'unknown')})")
     if failures:
-        raise SystemExit(f"{failures} of {len(texts)} rows differ beyond float16 tolerance")
+        raise SystemExit(f"{failures} of {len(texts)} rows differ beyond tolerance (rtol=1e-3, atol=1e-2)")
 
 
 if __name__ == "__main__":
