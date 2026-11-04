@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 import warnings
@@ -103,20 +104,27 @@ def fit_one(row: Union[int, str], dim: int, x_train, y_train, x_test, y_test) ->
     }
 
 
+def readme_key(name: str) -> str:
+    """Seeded feature names (e.g. mrl_s42) look up the README entry of their arm (mrl)."""
+    return re.sub(r"_s\d+$", "", name)
+
+
 def check_readme(name: str, grid: pd.DataFrame) -> None:
     with open(EXPECTED_README, "r", encoding="utf-8") as handle:
         expected = json.load(handle)["macro_f1"]
-    if name not in expected:
-        print(f"\n--check-readme: '{name}' is not in {EXPECTED_README.name} "
+    key = readme_key(name)
+    if key not in expected:
+        print(f"\n--check-readme: '{key}' is not in {EXPECTED_README.name} "
               f"(has: {', '.join(expected)}); skipping.")
         return
 
     pooler = grid[grid["layer"] == "pooler"].set_index("dim")["f1"] * 100
-    print(f"\nPooler row vs README for {name} (macro-F1 %):")
+    label = name if key == name else f"{name} (README entry '{key}')"
+    print(f"\nPooler row vs README for {label} (macro-F1 %):")
     print(f"{'dim':>5} {'ours':>7} {'README':>7} {'diff':>7}")
     worst = 0.0
     for dim in DIMS:
-        ours, theirs = float(pooler[dim]), float(expected[name][str(dim)])
+        ours, theirs = float(pooler[dim]), float(expected[key][str(dim)])
         worst = max(worst, abs(ours - theirs))
         print(f"{dim:>5} {ours:7.2f} {theirs:7.2f} {ours - theirs:+7.2f}")
     verdict = "PASS" if worst < README_TOLERANCE else "WARN"
