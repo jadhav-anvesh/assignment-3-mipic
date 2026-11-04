@@ -14,6 +14,8 @@
       1. extract_cls.py   --name N --checkpoint best.pt
       2. probe_grid.py    --name N --check-readme
       3. sts_eval.py      --name N --checkpoint best.pt --drop-overlap
+     3b. sts_eval.py      --name N --checkpoint best.pt   (all pairs, so the
+                          clean-minus-all contamination check can be made)
       4. subset_probe.py  --name N --n-random 20
 
     A step is skipped when its output already exists, so reruns are safe:
@@ -21,9 +23,10 @@
          steps 2 and 4 are both done (the features are no longer needed)
       2. h11_probe/results/N_grid.csv and N_preds.npz
       3. h11_probe/results/N_sts_clean.csv
+     3b. h11_probe/results/N_sts.csv
       4. h11_probe/results/N_subsets.csv and N_subsets_summary.csv
     Steps 2 and 4 need the features, and step 4 also needs step 2's grid, so a
-    failure upstream blocks them. Step 3 reads the checkpoint and always runs.
+    failure upstream blocks them. Steps 3 and 3b read the checkpoint and always run.
 
     A step counts as done only if Python exits 0 AND its output files exist.
 
@@ -137,20 +140,23 @@ try {
         $ckpt = Join-Path $CkptRoot "$model\best.pt"
         $log = Join-Path $LogDir "analysis_$model.log"
         $featDir = Join-Path $FeaturesRoot $name
+        # Step keys are strings so the all-pairs STS run can be "3b".
         $out = @{
-            1 = @(Join-Path $featDir "meta.json")
-            2 = @((Join-Path $ResultsRoot "${name}_grid.csv"), (Join-Path $ResultsRoot "${name}_preds.npz"))
-            3 = @(Join-Path $ResultsRoot "${name}_sts_clean.csv")
-            4 = @((Join-Path $ResultsRoot "${name}_subsets.csv"), (Join-Path $ResultsRoot "${name}_subsets_summary.csv"))
+            "1"  = @(Join-Path $featDir "meta.json")
+            "2"  = @((Join-Path $ResultsRoot "${name}_grid.csv"), (Join-Path $ResultsRoot "${name}_preds.npz"))
+            "3"  = @(Join-Path $ResultsRoot "${name}_sts_clean.csv")
+            "3b" = @(Join-Path $ResultsRoot "${name}_sts.csv")
+            "4"  = @((Join-Path $ResultsRoot "${name}_subsets.csv"), (Join-Path $ResultsRoot "${name}_subsets_summary.csv"))
         }
         $steps = @(
-            @{ N = 1; Label = "1 extract_cls"; Args = "h11_probe\extract_cls.py --name $name --checkpoint `"$ckpt`"" },
-            @{ N = 2; Label = "2 probe_grid"; Args = "h11_probe\probe_grid.py --name $name --check-readme" },
-            @{ N = 3; Label = "3 sts_eval"; Args = "h11_probe\sts_eval.py --name $name --checkpoint `"$ckpt`" --drop-overlap" },
-            @{ N = 4; Label = "4 subset_probe"; Args = "h11_probe\subset_probe.py --name $name --n-random 20" }
+            @{ N = "1"; Label = "1 extract_cls"; Args = "h11_probe\extract_cls.py --name $name --checkpoint `"$ckpt`"" },
+            @{ N = "2"; Label = "2 probe_grid"; Args = "h11_probe\probe_grid.py --name $name --check-readme" },
+            @{ N = "3"; Label = "3 sts_eval (clean)"; Args = "h11_probe\sts_eval.py --name $name --checkpoint `"$ckpt`" --drop-overlap" },
+            @{ N = "3b"; Label = "3b sts_eval (all pairs)"; Args = "h11_probe\sts_eval.py --name $name --checkpoint `"$ckpt`"" },
+            @{ N = "4"; Label = "4 subset_probe"; Args = "h11_probe\subset_probe.py --name $name --n-random 20" }
         )
         $done = @{}
-        foreach ($n in 1..4) { $done[$n] = Test-AllExist $out[$n] }
+        foreach ($n in $out.Keys) { $done[$n] = Test-AllExist $out[$n] }
         $completed = @(); $skipped = @(); $failed = @()
 
         Write-Host ""
@@ -164,12 +170,12 @@ try {
             $reason = $null
             if ($done[$n]) {
                 $reason = "output exists"
-            } elseif ($n -eq 1 -and $done[2] -and $done[4]) {
+            } elseif ($n -eq "1" -and $done["2"] -and $done["4"]) {
                 $reason = "steps 2 and 4 already done; features not needed"
-                $done[1] = $true
-            } elseif (($n -eq 2 -or $n -eq 4) -and -not $done[1]) {
+                $done["1"] = $true
+            } elseif (($n -eq "2" -or $n -eq "4") -and -not $done["1"]) {
                 $reason = "BLOCKED: features missing (step 1 not done)"
-            } elseif ($n -eq 4 -and -not $done[2]) {
+            } elseif ($n -eq "4" -and -not $done["2"]) {
                 $reason = "BLOCKED: grid missing (step 2 not done)"
             }
 
@@ -208,7 +214,7 @@ try {
         }
 
         if ($DeleteFeatures) {
-            if ($done[2] -and $done[4] -and (Test-Path -LiteralPath $featDir)) {
+            if ($done["2"] -and $done["4"] -and (Test-Path -LiteralPath $featDir)) {
                 if ($DryRun) {
                     Write-Host "  would delete features: $featDir"
                 } else {
