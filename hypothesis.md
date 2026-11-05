@@ -300,6 +300,16 @@ Report 16D and 32D scores, split by sentence length.
 
 **Correction, 2026-11-04.** The last sentence above is wrong. The run behind these numbers had the attention KL term **on** (see the H6 correction), so it tested CKA plus KL, not CKA alone. A local seed 42 retrain with the current code (KL off) gives MRL+SIA 63.19 at 16D and 71.00 at 768D, ahead of MRL at 16D to 64D (+3.32, +1.90, +0.73) and 0.2 to 0.7 behind from 128D up. So "SIA alone hurt" holds only for SIA with KL on. This is preliminary (one seed, pending seeds 1 and 2 and a KL-on retrain). Details in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md), Findings 4 and 5.
 
+**Correction, 2026-11-05.** The seed 42 result that MRL+SIA is ahead of MRL at 16D to 64D does not replicate. Pooler macro-F1, MRL+SIA minus MRL, with paired bootstrap 95% CIs (current code, KL off):
+
+| Seed | 16D | 32D | 64D |
+|---|---|---|---|
+| 42 | +3.32 [+1.78, +4.64] | +2.03 [+0.71, +3.30] | +0.75 [-0.38, +1.88] |
+| 1 | -0.95 [-2.35, +0.41] | -0.44 [-1.70, +0.72] | -1.56 [-2.68, -0.45] |
+| 2 | -0.15 [-1.78, +1.38] | +0.83 [-0.45, +2.19] | -0.68 [-1.87, +0.57] |
+
+Across the three seeds the mean differences are +0.74, +0.81 and -0.50 (sample std 2.27, 1.24 and 1.17), and only seed 42 has a CI above zero. From 128D up MRL+SIA is behind or level in every seed, significantly so at some widths in seeds 42 and 1. So with KL off, MRL+SIA is neither reliably better nor reliably worse than MRL at small widths; the second half of the hypothesis is not supported. (The seed 42 values here come from the paired bootstrap on the probe-grid refits; the +1.90 and +0.73 above come from `tweeteval_results.json`.) The KL-on comparison still rests on seed 42 only. Details in [h11_probe/CROSS_SEED.md](h11_probe/CROSS_SEED.md) and `h11_probe/results/bootstrap_mrl_sia_s{42,1,2}_vs_mrl_s{42,1,2}.csv`.
+
 **Test.** Run MRL, MRL+SIA, MRL+PIC and MIPIC with at least 3 seeds, crossed with KL on/off and α ∈ {0.4, 0.7}, at the paper's settings. Report mean ± std.
 
 ### H16. SIA and PIC are synergistic

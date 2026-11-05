@@ -1,0 +1,8 @@
+final_data.csv: 20240 rows, TWEET_EVAL_SENT: 3000 rows
+tweet_train (26732 rows) vs all sources: exact 3000, normalised 3006 (11.2%)
+tweet_train (26732 rows) vs TWEET_EVAL_SENT: exact 3000, normalised 3006 (11.2%)
+  labels of the exact matches: {0: 841, 1: 1249, 2: 910}
+  TWEET_EVAL_SENT rows found in tweet_train: 3000 of 3000
+tweet_test (3432 rows) vs all sources: exact 0, normalised 0 (0.0%)
+tweet_test (3432 rows) vs TWEET_EVAL_SENT: exact 0, normalised 0 (0.0%)
+  TWEET_EVAL_SENT rows found in tweet_test: 0 of 3000

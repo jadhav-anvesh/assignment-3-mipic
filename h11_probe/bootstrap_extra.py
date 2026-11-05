@@ -104,12 +104,15 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
     parser.add_argument("--n-resamples", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--skip-pairwise", action="store_true",
+                        help="Only the interaction; for seeds without a KL-on MIPIC run.")
     args = parser.parse_args(argv)
 
     common = ["--results-dir", str(args.results_dir), "--n-resamples", str(args.n_resamples), "--seed", str(args.seed)]
-    for b in (f"mrl{args.suffix}", args.base):
-        bootstrap.main(["--a", f"mipic_kl{args.suffix}", "--b", b] + common)
-        print()
+    if not args.skip_pairwise:
+        for b in (f"mrl{args.suffix}", args.base):
+            bootstrap.main(["--a", f"mipic_kl{args.suffix}", "--b", b] + common)
+            print()
 
     table = interaction_table(args.results_dir, args.suffix, args.n_resamples, args.seed)
     out_path = args.results_dir / f"bootstrap_interaction{args.suffix}.csv"

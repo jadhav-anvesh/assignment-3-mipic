@@ -85,7 +85,7 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     rows = []
     for m in args.models:
-        path = args.runs_dir / m / args.checkpoint_name
+        path = (args.runs_dir / m / args.checkpoint_name).resolve()
         model, _ = load_encoder(path, device="cpu")
         trained = {k: v.detach() for k, v in model.state_dict().items() if k in base}
         for g in order:

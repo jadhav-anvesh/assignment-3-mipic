@@ -64,6 +64,7 @@ def fit_tuned(x_train, y_train, x_test, y_test, dim: int) -> dict:
         predictions = search.predict(x_eval)
     n_iter = int(search.best_estimator_.named_steps["lr"].n_iter_[0])
     return {
+        "predictions": predictions.astype(np.int8),
         "f1": float(f1_score(y_test, predictions, average="macro")) * 100,
         "accuracy": float(accuracy_score(y_test, predictions)) * 100,
         "best_C": float(search.best_params_["lr__C"]),
@@ -71,6 +72,29 @@ def fit_tuned(x_train, y_train, x_test, y_test, dim: int) -> dict:
         "n_iter": n_iter,
         "converged": n_iter < 1000,
     }
+
+
+def bootstrap_full(preds: dict, labels: np.ndarray, models: List[str], reference: str, dims: List[int],
+                   n_resamples: int = 1000, seed: int = 0) -> pd.DataFrame:
+    """Paired bootstrap of F1(model) - F1(reference) on the full-size fits, as in bootstrap.py."""
+    from h11_probe.bootstrap import macro_f1_rows
+
+    n = len(labels)
+    idx = np.random.default_rng(seed).integers(0, n, size=(n_resamples, n))
+    y_boot = labels[idx]
+    classes = np.unique(labels)
+    out = []
+    for m in models:
+        if m == reference:
+            continue
+        for dim in dims:
+            a, b = preds[f"{m}_d{dim}"], preds[f"{reference}_d{dim}"]
+            diff = float(macro_f1_rows(labels, a, classes) - macro_f1_rows(labels, b, classes)) * 100
+            boot = (macro_f1_rows(y_boot, a[idx], classes) - macro_f1_rows(y_boot, b[idx], classes)) * 100
+            low, high = np.percentile(boot, [2.5, 97.5])
+            out.append({"model": m, "reference": reference, "dim": dim, "diff": diff, "ci_low": low, "ci_high": high,
+                        "excludes_zero": bool(low > 0 or high < 0), "n_resamples": n_resamples, "seed": seed})
+    return pd.DataFrame(out)
 
 
 def main(argv: Optional[List[str]] = None) -> None:
@@ -110,9 +134,16 @@ def main(argv: Optional[List[str]] = None) -> None:
     rows = Parallel(n_jobs=args.n_jobs, verbose=2)(delayed(run)(*j) for j in jobs)
     print(f"done in {time.perf_counter() - start:.0f}s")
 
+    # Full-size test predictions, for the paired bootstrap against --reference below.
+    full_preds = {f"{r['model']}_d{r['dim']}": r.pop("predictions") for r in rows if r["size"] == n_train}
+    for r in rows:
+        r.pop("predictions", None)
     table = pd.DataFrame(rows).sort_values(["model", "size", "rep", "dim"]).reset_index(drop=True)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     table.to_csv(args.out_dir / f"probe_tuned_{args.tag}.csv", index=False)
+    np.savez_compressed(args.out_dir / f"probe_tuned_{args.tag}_preds.npz", labels=y_test_ref, **full_preds)
+    boot = bootstrap_full(full_preds, y_test_ref, args.models, args.reference, args.dims)
+    boot.to_csv(args.out_dir / f"probe_tuned_{args.tag}_bootstrap.csv", index=False)
     if not table["converged"].all():
         print(f"WARNING: {int((~table['converged']).sum())} final fits hit max_iter")
 

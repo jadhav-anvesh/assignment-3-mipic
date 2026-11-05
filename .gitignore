@@ -32,6 +32,8 @@ tensorboard/
 h11_probe/features/
 h11_probe/runs/
 h11_probe/runs_kl/
+# Small h11_probe result tables (CSV/NPZ/TXT, a few MB) are tracked.
+!h11_probe/results/
 
 # Model and optimizer artifacts
 *.ckpt

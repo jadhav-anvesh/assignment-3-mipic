@@ -1,0 +1,13 @@
+seed,model,selected_epoch
+42,mrl,1
+42,mrl_pic,1
+42,mipic,3
+42,mrl_sia,1
+1,mrl,2
+1,mrl_pic,1
+1,mipic,1
+1,mrl_sia,1
+2,mrl,2
+2,mrl_pic,2
+2,mipic,1
+2,mrl_sia,1
