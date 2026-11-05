@@ -30,8 +30,15 @@ checkpoints/
 wandb/
 tensorboard/
 h11_probe/features/
-h11_probe/runs/
-h11_probe/runs_kl/
+# Run folders: only the per-seed result tables are tracked; checkpoints and logs stay local.
+!h11_probe/runs/
+!h11_probe/runs_kl/
+h11_probe/runs/*/*
+h11_probe/runs_kl/*/*
+!h11_probe/runs/*/tweeteval_results.json
+!h11_probe/runs/*/tweeteval_results.csv
+!h11_probe/runs_kl/*/tweeteval_results.json
+!h11_probe/runs_kl/*/tweeteval_results.csv
 # Small h11_probe result tables (CSV/NPZ/TXT, a few MB) are tracked.
 !h11_probe/results/
 

@@ -1,0 +1,468 @@
+{
+  "metadata": {
+    "device": "cuda",
+    "epochs": 5,
+    "batch_size_per_gpu": 16,
+    "global_batch_size": 16,
+    "learning_rate": 2e-05,
+    "temperature": 0.05,
+    "sia_temperature": 1.0,
+    "mrl_readout": "pooler_output",
+    "pic_detach_target": true,
+    "max_grad_norm": 0.0,
+    "pic_temperature": 0.05,
+    "alpha": 0.4,
+    "warmup_ratio": 0.1,
+    "scheduler": "cosine",
+    "probe_max_iter": 1000,
+    "dimensions": [
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      768
+    ],
+    "train_corpus": "data\\final_data.csv",
+    "train_samples": 20240,
+    "train_sources": {
+      "BANKING77": 3000,
+      "TWEET_EVAL_SENT": 3000,
+      "DEEHAN1866/WIC": 3000,
+      "MRPC": 3000,
+      "DGEM_FORMAT": 3000,
+      "STSB": 2893,
+      "SICK": 2347
+    },
+    "eval_train_samples": 26732,
+    "eval_test_samples": 3432,
+    "output_dir": "h11_probe\\runs_kl\\seed42",
+    "kaggle": false,
+    "seed": 42,
+    "eval_train_csv": "data\\tweet_train.csv",
+    "eval_test_csv": "data\\tweet_test.csv",
+    "truncated_run": false,
+    "use_attention_kl": true,
+    "model_name": "mipic_kl",
+    "source_arm": "mipic",
+    "kl_check": {
+      "steps_checked": 50,
+      "steps_nonzero": 50
+    }
+  },
+  "training_history": {
+    "mrl_sia_kl": [
+      {
+        "total_loss": 0.16101004704685787,
+        "mrl_loss": 0.17586386785676827,
+        "sia_loss": 0.15110749162350717,
+        "sia_attn_loss": 0.1013426508474727,
+        "sia_cka_loss": 0.049764841021933105
+      },
+      {
+        "total_loss": 0.04056656350908072,
+        "mrl_loss": 0.012773663600678501,
+        "sia_loss": 0.0590951609340581,
+        "sia_attn_loss": 0.02571298581043722,
+        "sia_cka_loss": 0.033382175147916256
+      },
+      {
+        "total_loss": 0.032772935921024426,
+        "mrl_loss": 0.0071885826853895374,
+        "sia_loss": 0.04982916944082311,
+        "sia_attn_loss": 0.020428577751628024,
+        "sia_cka_loss": 0.02940059165753748
+      },
+      {
+        "total_loss": 0.027439403294662948,
+        "mrl_loss": 0.006366485816687934,
+        "sia_loss": 0.04148801323320908,
+        "sia_attn_loss": 0.014792164384199696,
+        "sia_cka_loss": 0.026695848838702258
+      },
+      {
+        "total_loss": 0.025811323016263515,
+        "mrl_loss": 0.004870261758448107,
+        "sia_loss": 0.03977202892288742,
+        "sia_attn_loss": 0.01361472080185597,
+        "sia_cka_loss": 0.026157308117350335
+      }
+    ],
+    "mipic_kl": [
+      {
+        "total_loss": 1.2427938092367452,
+        "mipic_loss": 1.2427938092367452,
+        "mrl_loss": 0.18176777081291667,
+        "sia_loss": 0.15901290726343634,
+        "pic_loss": 1.7911315184336878
+      },
+      {
+        "total_loss": 0.45440491499165775,
+        "mipic_loss": 0.45440491499165775,
+        "mrl_loss": 0.020072283810777625,
+        "sia_loss": 0.06843440064740747,
+        "pic_loss": 0.6755255709052557
+      },
+      {
+        "total_loss": 0.3155786810420719,
+        "mipic_loss": 0.3155786810420719,
+        "mrl_loss": 0.010851316866667375,
+        "sia_loss": 0.061608720202691,
+        "pic_loss": 0.45712151628709125
+      },
+      {
+        "total_loss": 0.2625113364029308,
+        "mipic_loss": 0.2625113364029308,
+        "mrl_loss": 0.008439007130536165,
+        "sia_loss": 0.06001999879277978,
+        "pic_loss": 0.3718728727738377
+      },
+      {
+        "total_loss": 0.25145135238001,
+        "mipic_loss": 0.25145135238001,
+        "mrl_loss": 0.0061793434290075494,
+        "sia_loss": 0.06437284536217984,
+        "pic_loss": 0.3505931626195493
+      }
+    ]
+  },
+  "evaluations": {
+    "mrl_sia_kl": {
+      "16": {
+        "accuracy": 0.6191724941724942,
+        "f1": 0.6220228181417099,
+        "probe_n_iter": 61,
+        "probe_converged": true
+      },
+      "32": {
+        "accuracy": 0.6392773892773893,
+        "f1": 0.6415453019116265,
+        "probe_n_iter": 57,
+        "probe_converged": true
+      },
+      "64": {
+        "accuracy": 0.6538461538461539,
+        "f1": 0.6563514878884096,
+        "probe_n_iter": 74,
+        "probe_converged": true
+      },
+      "128": {
+        "accuracy": 0.671037296037296,
+        "f1": 0.6733573003661664,
+        "probe_n_iter": 104,
+        "probe_converged": true
+      },
+      "256": {
+        "accuracy": 0.6751165501165501,
+        "f1": 0.6778699411116526,
+        "probe_n_iter": 52,
+        "probe_converged": true
+      },
+      "512": {
+        "accuracy": 0.6908508158508159,
+        "f1": 0.6938090924350991,
+        "probe_n_iter": 63,
+        "probe_converged": true
+      },
+      "768": {
+        "accuracy": 0.6940559440559441,
+        "f1": 0.6971667684360981,
+        "probe_n_iter": 87,
+        "probe_converged": true
+      }
+    },
+    "mrl_sia_kl_last_epoch": {
+      "16": {
+        "accuracy": 0.6244172494172494,
+        "f1": 0.6263141151455175,
+        "probe_n_iter": 49,
+        "probe_converged": true
+      },
+      "32": {
+        "accuracy": 0.6421911421911422,
+        "f1": 0.6441565626308431,
+        "probe_n_iter": 56,
+        "probe_converged": true
+      },
+      "64": {
+        "accuracy": 0.6561771561771562,
+        "f1": 0.6580625669985124,
+        "probe_n_iter": 65,
+        "probe_converged": true
+      },
+      "128": {
+        "accuracy": 0.6707459207459208,
+        "f1": 0.6719052025355859,
+        "probe_n_iter": 87,
+        "probe_converged": true
+      },
+      "256": {
+        "accuracy": 0.6824009324009324,
+        "f1": 0.6840797047661109,
+        "probe_n_iter": 74,
+        "probe_converged": true
+      },
+      "512": {
+        "accuracy": 0.6917249417249417,
+        "f1": 0.6939581593259202,
+        "probe_n_iter": 67,
+        "probe_converged": true
+      },
+      "768": {
+        "accuracy": 0.6949300699300699,
+        "f1": 0.6975787118280441,
+        "probe_n_iter": 66,
+        "probe_converged": true
+      }
+    },
+    "mipic_kl": {
+      "16": {
+        "accuracy": 0.6037296037296037,
+        "f1": 0.6036418186012739,
+        "probe_n_iter": 33,
+        "probe_converged": true
+      },
+      "32": {
+        "accuracy": 0.6168414918414918,
+        "f1": 0.6171114901537296,
+        "probe_n_iter": 70,
+        "probe_converged": true
+      },
+      "64": {
+        "accuracy": 0.6223776223776224,
+        "f1": 0.6223796410866947,
+        "probe_n_iter": 52,
+        "probe_converged": true
+      },
+      "128": {
+        "accuracy": 0.6305361305361306,
+        "f1": 0.6301657479509094,
+        "probe_n_iter": 78,
+        "probe_converged": true
+      },
+      "256": {
+        "accuracy": 0.6506410256410257,
+        "f1": 0.6508849853806384,
+        "probe_n_iter": 55,
+        "probe_converged": true
+      },
+      "512": {
+        "accuracy": 0.6585081585081585,
+        "f1": 0.6595625070500101,
+        "probe_n_iter": 93,
+        "probe_converged": true
+      },
+      "768": {
+        "accuracy": 0.6681235431235432,
+        "f1": 0.6693016833821991,
+        "probe_n_iter": 90,
+        "probe_converged": true
+      }
+    },
+    "mipic_kl_last_epoch": {
+      "16": {
+        "accuracy": 0.5984848484848485,
+        "f1": 0.5973368815534134,
+        "probe_n_iter": 42,
+        "probe_converged": true
+      },
+      "32": {
+        "accuracy": 0.6168414918414918,
+        "f1": 0.615962943833758,
+        "probe_n_iter": 46,
+        "probe_converged": true
+      },
+      "64": {
+        "accuracy": 0.6255827505827506,
+        "f1": 0.6247404518558365,
+        "probe_n_iter": 72,
+        "probe_converged": true
+      },
+      "128": {
+        "accuracy": 0.6337412587412588,
+        "f1": 0.6331770436970146,
+        "probe_n_iter": 52,
+        "probe_converged": true
+      },
+      "256": {
+        "accuracy": 0.6515151515151515,
+        "f1": 0.6520434403165294,
+        "probe_n_iter": 64,
+        "probe_converged": true
+      },
+      "512": {
+        "accuracy": 0.6611305361305362,
+        "f1": 0.6619482526562888,
+        "probe_n_iter": 89,
+        "probe_converged": true
+      },
+      "768": {
+        "accuracy": 0.6678321678321678,
+        "f1": 0.6689372283135243,
+        "probe_n_iter": 70,
+        "probe_converged": true
+      }
+    }
+  },
+  "metadata_by_model": {
+    "mrl_sia_kl": {
+      "device": "cuda",
+      "epochs": 5,
+      "batch_size_per_gpu": 16,
+      "global_batch_size": 16,
+      "learning_rate": 2e-05,
+      "temperature": 0.05,
+      "sia_temperature": 1.0,
+      "mrl_readout": "pooler_output",
+      "pic_detach_target": true,
+      "max_grad_norm": 0.0,
+      "pic_temperature": 0.05,
+      "alpha": 0.4,
+      "warmup_ratio": 0.1,
+      "scheduler": "cosine",
+      "probe_max_iter": 1000,
+      "dimensions": [
+        16,
+        32,
+        64,
+        128,
+        256,
+        512,
+        768
+      ],
+      "train_corpus": "data\\final_data.csv",
+      "train_samples": 20240,
+      "train_sources": {
+        "BANKING77": 3000,
+        "TWEET_EVAL_SENT": 3000,
+        "DEEHAN1866/WIC": 3000,
+        "MRPC": 3000,
+        "DGEM_FORMAT": 3000,
+        "STSB": 2893,
+        "SICK": 2347
+      },
+      "eval_train_samples": 26732,
+      "eval_test_samples": 3432,
+      "output_dir": "h11_probe\\runs_kl\\seed42",
+      "kaggle": false,
+      "seed": 42,
+      "eval_train_csv": "data\\tweet_train.csv",
+      "eval_test_csv": "data\\tweet_test.csv",
+      "truncated_run": false,
+      "use_attention_kl": true,
+      "model_name": "mrl_sia_kl",
+      "source_arm": "mrl_sia",
+      "kl_check": {
+        "steps_checked": 50,
+        "steps_nonzero": 50
+      }
+    },
+    "mipic_kl": {
+      "device": "cuda",
+      "epochs": 5,
+      "batch_size_per_gpu": 16,
+      "global_batch_size": 16,
+      "learning_rate": 2e-05,
+      "temperature": 0.05,
+      "sia_temperature": 1.0,
+      "mrl_readout": "pooler_output",
+      "pic_detach_target": true,
+      "max_grad_norm": 0.0,
+      "pic_temperature": 0.05,
+      "alpha": 0.4,
+      "warmup_ratio": 0.1,
+      "scheduler": "cosine",
+      "probe_max_iter": 1000,
+      "dimensions": [
+        16,
+        32,
+        64,
+        128,
+        256,
+        512,
+        768
+      ],
+      "train_corpus": "data\\final_data.csv",
+      "train_samples": 20240,
+      "train_sources": {
+        "BANKING77": 3000,
+        "TWEET_EVAL_SENT": 3000,
+        "DEEHAN1866/WIC": 3000,
+        "MRPC": 3000,
+        "DGEM_FORMAT": 3000,
+        "STSB": 2893,
+        "SICK": 2347
+      },
+      "eval_train_samples": 26732,
+      "eval_test_samples": 3432,
+      "output_dir": "h11_probe\\runs_kl\\seed42",
+      "kaggle": false,
+      "seed": 42,
+      "eval_train_csv": "data\\tweet_train.csv",
+      "eval_test_csv": "data\\tweet_test.csv",
+      "truncated_run": false,
+      "use_attention_kl": true,
+      "model_name": "mipic_kl",
+      "source_arm": "mipic",
+      "kl_check": {
+        "steps_checked": 50,
+        "steps_nonzero": 50
+      }
+    }
+  },
+  "epoch_selection": {
+    "mrl_sia_kl": {
+      "selected_epoch": 1,
+      "total_epochs": 5,
+      "validation_curve": [
+        {
+          "epoch": 1,
+          "val_macro_f1": 64.569
+        },
+        {
+          "epoch": 2,
+          "val_macro_f1": 62.225
+        },
+        {
+          "epoch": 3,
+          "val_macro_f1": 62.474
+        },
+        {
+          "epoch": 4,
+          "val_macro_f1": 63.466
+        },
+        {
+          "epoch": 5,
+          "val_macro_f1": 63.267
+        }
+      ]
+    },
+    "mipic_kl": {
+      "selected_epoch": 1,
+      "total_epochs": 5,
+      "validation_curve": [
+        {
+          "epoch": 1,
+          "val_macro_f1": 61.388
+        },
+        {
+          "epoch": 2,
+          "val_macro_f1": 60.09
+        },
+        {
+          "epoch": 3,
+          "val_macro_f1": 61.065
+        },
+        {
+          "epoch": 4,
+          "val_macro_f1": 60.44
+        },
+        {
+          "epoch": 5,
+          "val_macro_f1": 61.143
+        }
+      ]
+    }
+  }
+}

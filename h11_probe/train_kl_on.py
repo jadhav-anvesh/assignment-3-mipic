@@ -106,6 +106,14 @@ def rename_results(staged: Dict, model: str, new_name: str) -> Dict[str, Dict]:
     return out
 
 
+def repo_relative(path: Path) -> str:
+    """Path relative to the repository root when it lies inside it, so results don't record machine paths."""
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def merge_into_output(output_dir: Path, staging_dir: Path, model: str, new_name: str, kl_stats: Dict) -> Path:
     with open(staging_dir / "tweeteval_results.json", "r", encoding="utf-8") as handle:
         staged = json.load(handle)
@@ -124,7 +132,7 @@ def merge_into_output(output_dir: Path, staging_dir: Path, model: str, new_name:
 
     metadata = dict(staged.get("metadata", {}))
     metadata.update({"use_attention_kl": True, "model_name": new_name, "source_arm": model,
-                     "output_dir": str(output_dir), "kl_check": kl_stats})
+                     "output_dir": repo_relative(output_dir), "kl_check": kl_stats})
     results["metadata"] = metadata
     results.setdefault("metadata_by_model", {})[new_name] = metadata
     for section, entries in rename_results(staged, model, new_name).items():
@@ -246,8 +254,9 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     if staging_dir.exists():
         shutil.rmtree(staging_dir)
-    # run_experiments reads these at import time.
-    os.environ["MIPIC_OUTPUT_DIR"] = str(staging_dir)
+    # run_experiments reads these at import time. The working directory is REPO_ROOT here,
+    # so the repo-relative form points at the same folder.
+    os.environ["MIPIC_OUTPUT_DIR"] = repo_relative(staging_dir)
     os.environ["MIPIC_SEED"] = str(args.seed)
     os.environ["MIPIC_FRESH"] = "1"
 
