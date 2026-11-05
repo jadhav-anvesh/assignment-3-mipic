@@ -8,6 +8,7 @@ the reducer failed to receive a gradient, DDP raises on the second forward.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -150,6 +151,7 @@ def _worker(rank: int, world_size: int, init_file: str, out_dir: str) -> None:
 
 
 @pytest.mark.skipif(not dist.is_available(), reason="torch.distributed unavailable")
+@pytest.mark.skipif(sys.platform == "win32", reason="gloo cannot create a device on Windows (makeDeviceForHostname); runs on Kaggle/Linux")
 def test_two_rank_mipic_needs_no_unused_parameter_detection(tmp_path: Path) -> None:
     """The single shipped configuration must run under find_unused_parameters=False.
 

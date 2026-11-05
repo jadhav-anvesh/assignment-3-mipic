@@ -79,6 +79,9 @@ class MRLSIAPICConfig:
     # instantiates its alignment module with temperature=1.0, so that value is
     # used here. Set to 0.05 for the literal-symbol reading.
     sia_temperature: float = 1.0
+    # Eq. (6) attention-distribution KL. False keeps only the top-k CKA term;
+    # the P_i projections are still created so checkpoints stay compatible.
+    use_attention_kl: bool = True
 
     # PIC configuration (mipic.pdf Section A.5)
     pic_temperature: float = 0.05
@@ -145,7 +148,7 @@ class TinyBERT_MRL_SIA_PIC(nn.Module):
             temperature=self.config.sia_temperature,
             w_attn=1.0,
             w_cka=1.0,
-            use_attention_kl=False,
+            use_attention_kl=self.config.use_attention_kl,
         )
 
         # 3. Progressive Information Chaining (PIC) Loss module

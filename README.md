@@ -22,20 +22,63 @@ A Logistic Regression probe is fitted on the frozen encoder representations at e
 
 ## Repository structure
 
+The repository has two parts. The MIPIC implementation (models, losses, training, evaluation and tests) matches [MIPIC_hypotheses](https://github.com/maverick-0215/MIPIC_hypotheses). `h11_probe/` holds the probing experiments that test the paper's claims. The POS-probe, Indic and routing experiments from the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1), are not included.
+
 ```text
 .
-├── data/                       # Training and evaluation CSVs
-├── losses/                     # MRL, SIA and PIC losses
-├── models/                     # TinyBERT model wrappers and combinations
-├── tests/                      # Unit, integration and protocol checks
-├── train.py                    # Training routines
-├── evaluate.py                 # Linear-probe evaluation
-├── run_experiments.py          # Main experiment runner
-├── prepare_training_corpus.py  # Corpus preparation utilities
-├── sanity_check.py             # Basic environment/model checks
-├── tensor_traces.py            # Shape/gradient diagnostics
-└── MIPIC_Kaggle_FINAL.ipynb    # Kaggle execution notebook
+├── README.md                     # This file
+├── HANDOFF.md                    # Start here: summary, results, how to reproduce, next steps
+├── hypothesis.md                 # The paper's testable assumptions, H1 to H20
+├── MIPIC_TRAINING_README.md      # Record of the original Kaggle training run
+├── LEXIS_A1.pdf                  # Project report
+│
+├── data/                         # Training corpus and tweet sentiment probe splits
+├── models/                       # TinyBERT wrappers: MRL, MRL+SIA, MRL+PIC, MIPIC
+├── losses/                       # MRL, SIA and PIC losses, distributed helpers
+├── mipic/                        # Package marker
+├── train.py                      # Training routines
+├── evaluate.py                   # Logistic-regression probe evaluation
+├── run_experiments.py            # Main experiment runner (MIPIC_* environment variables)
+├── prepare_training_corpus.py    # Builds data/final_data.csv
+├── sanity_check.py               # Basic environment and model checks
+├── tensor_traces.py              # Shape and gradient diagnostics
+├── diagnose_hang.py              # DDP hang diagnostics
+├── tests/                        # Unit, integration, protocol and attention-KL switch tests
+│
+├── kaggle/
+│   ├── README.md                 # Kaggle (2x T4) setup and run instructions
+│   └── kaggle_bootstrap.py
+├── MIPIC_Kaggle_FINAL.ipynb      # Kaggle execution notebook
+├── mipic.ipynb                   # Reference notebook used by tests/test_mrl_baseline_integration.py
+├── mipic-a1-lexis.ipynb          # Notebook of the original Kaggle run (evidence for Finding 5)
+│
+├── h11_probe/                    # Probing experiments (see HANDOFF.md, section g, for every file)
+│   ├── FINDINGS.md               # Findings 1 to 9 with numbers, CIs and caveats
+│   ├── CROSS_SEED.md             # Cross-seed tables (seeds 42, 1, 2)
+│   ├── train_all.ps1 / .sh       # Train the four arms for one seed (attention KL pinned off)
+│   ├── train_kl_on.py            # Train MRL+SIA or MIPIC with attention KL forced on
+│   ├── analyze_seed.ps1 / .sh    # Feature extraction, probe grid, STS-B and subset probes per seed
+│   ├── load_encoder.py           # Load a bare encoder from any checkpoint format
+│   ├── extract_cls.py            # [CLS] per layer and pooler output, float32
+│   ├── probe_grid.py             # Probe on every (layer, width) cell
+│   ├── sts_eval.py               # Zero-shot STS-B cosine Spearman per cell
+│   ├── subset_probe.py           # Prefix versus other and random coordinate subsets
+│   ├── bootstrap*.py             # Paired bootstrap CIs between models, KL-on pairs, SIA x PIC
+│   ├── probe_size.py, probe_tuned*.py, probe_knn.py, selection_probe.py,
+│   │   pooler_*.py, refit_check.py, overlap_check.py, check_padding.py,
+│   │   weight_drift.py           # Checks behind Findings 1 and 9
+│   ├── aggregate_seeds.py        # Builds CROSS_SEED.md and results/cross_seed_*.csv
+│   ├── test_load_encoder.py      # Tests for load_encoder
+│   ├── results/                  # Per-model result tables (tracked)
+│   ├── runs/seed{42,1,2}/        # KL-off runs: result tables tracked, checkpoints and logs local
+│   └── runs_kl/seed42/           # KL-on runs of MRL+SIA and MIPIC
+│
+├── requirements.txt              # Local environment
+├── requirements-kaggle.txt       # Kaggle environment
+└── requirements-lock.txt         # Exact versions used for the h11_probe runs
 ```
+
+**Attention KL.** `MIPIC_ATTENTION_KL` switches the SIA attention-KL term (Eq. 6) on or off. It is on by default, as in the paper. The `h11_probe` runs were made with it off, so `h11_probe/train_all.*` set `MIPIC_ATTENTION_KL=0`; pass `-AttentionKL` / `--attention-kl` to train the SIA arms with it on.
 
 ## Requirements
 
@@ -79,9 +122,11 @@ For a quick smoke test:
 MIPIC_MAX_BATCHES=3 python run_experiments.py --model mipic
 ```
 
+For Kaggle / 2-GPU execution, see [`kaggle/README.md`](kaggle/README.md).
+
 ## Outputs
 
-Results are written to `results/` by default after execution:
+Results are written to `results/` by default:
 
 ```text
 results/

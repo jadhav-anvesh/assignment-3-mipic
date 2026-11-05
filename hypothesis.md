@@ -10,7 +10,7 @@ This document lists the assumptions MIPIC relies on, whether stated outright, im
 - **Evidence so far:** results already in this repository, if any.
 - **Test:** a concrete experiment, using this repository's code where possible.
 
-The motivating case is H1. The POS probes in [pos_probe/](pos_probe/POS_EXPERIMENTS_README.md) found that the leading coordinates of MIPIC's token vectors are not privileged for POS tagging.
+The motivating case is H1. The POS probes (`pos_probe/` in the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1); not in this repository) found that the leading coordinates of MIPIC's token vectors are not privileged for POS tagging.
 
 ## Summary
 
@@ -163,7 +163,7 @@ Also report the part-of-speech distribution of the selected tokens.
 
 **Why test it.** KL on softmax distributions is not a ranking loss. A student can lower the KL while reordering tokens in the tail. In addition, the projection P_i is learned jointly, so it can absorb the mismatch without changing the backbone.
 
-**Evidence so far.** The current code turns the term off (`use_attention_kl=False` in [models/mrl_sia_pic.py](models/mrl_sia_pic.py)), and the local checkpoint folder is named `results_no_kl`. Check the recorded run's log to confirm whether KL was on.
+**Evidence so far.** The current code turns the term off (`use_attention_kl=False` in [models/mrl_sia_pic.py](models/mrl_sia_pic.py)), and the local checkpoint folder is named `results_no_kl`. Check the recorded run's log to confirm whether KL was on. (The hardcoded value has since been replaced by the `MIPIC_ATTENTION_KL` switch, default on; see HANDOFF.md section h.)
 
 **Correction, 2026-11-04.** The recorded run's log has now been checked: KL was **on** in the run behind the README numbers. The MRL+SIA training summary in notebook cell 29 logs `sia_attn_loss` of 0.0987, 0.0413, 0.0608, 0.0627 and 0.0827 for epochs 1 to 5. A local rerun of the current code logs 0.0000. The README run used an older code version (MIPIC_FINAL_V20); `use_attention_kl=False` was hardcoded later. KL was very likely on for MIPIC too (its epoch 1 `sia_loss` was 0.1634 against 0.0480 with KL off). The sentence above is still true of the current code, but not of the reported results. Details in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md), Finding 5.
 
@@ -199,7 +199,7 @@ Report 16D and 32D scores, split by sentence length.
 
 **Why test it.** The cited findings are for BERT-base and ELMo-style models. The paper never checks them for a 6-layer distilled model, nor after its own fine-tuning, which is designed to change early layers (H9).
 
-**Test.** Extend the POS probe to read `hidden_states[l]` for l = 1…6 (a small change to [pos_probe/pos_probe.py](pos_probe/pos_probe.py)). Fit a TweetEval probe on [CLS] at each layer. Plot both curves for base TinyBERT, MRL and MIPIC.
+**Test.** Extend the POS probe to read `hidden_states[l]` for l = 1…6 (a small change to `pos_probe/pos_probe.py` in the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1)). Fit a TweetEval probe on [CLS] at each layer. Plot both curves for base TinyBERT, MRL and MIPIC.
 
 ### H9. PIC leaves low-level information intact in the remaining dimensions
 

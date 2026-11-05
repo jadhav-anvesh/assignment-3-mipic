@@ -4,6 +4,8 @@ A running log of results from the `h11_probe/` pipeline. Each finding states a c
 
 All probe numbers are macro-F1 (%) on the 3-class tweet sentiment test split (3,432 rows), from a logistic regression fitted on the full train split (26,732 rows). The probe uses the same settings as `evaluate.py`: `LogisticRegression(random_state=42, max_iter=1000)` with sklearn defaults otherwise and no feature scaling. Features are stored as float32.
 
+**Repository note (2026-11-05).** Every run in this log was trained with attention KL hardcoded off. The model code has since been replaced by the MIPIC_hypotheses version, where `MIPIC_ATTENTION_KL` switches it (default on); `train_all.ps1`/`.sh` pin it off so these runs stay reproducible. Statements below that the code "hardcodes it off", and line links into `models/`, describe the code these runs used.
+
 ---
 
 ## Finding 1. Pretrained TinyBERT, read through its untrained random pooler, matches or beats every trained model on the sentiment probe (3 seeds)

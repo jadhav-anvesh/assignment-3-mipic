@@ -68,6 +68,9 @@ class MRLSIAConfig:
     base_k: int = 64
     # Eq. (4)/(5) attention softmax temperature; see MRLSIAPICConfig.
     sia_temperature: float = 1.0
+    # Eq. (6) attention-distribution KL. False keeps only the top-k CKA term;
+    # the P_i projections are still created so checkpoints stay compatible.
+    use_attention_kl: bool = True
     learning_rate: float = 2e-5
     sia_lr_multiplier: float = 2.0
     weight_decay: float = 0.01
@@ -116,7 +119,7 @@ class TinyBERT_MRL_SIA(nn.Module):
             temperature=self.config.sia_temperature,
             w_attn=1.0,
             w_cka=1.0,
-            use_attention_kl=False,
+            use_attention_kl=self.config.use_attention_kl,
         )
 
         if device is not None:

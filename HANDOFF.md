@@ -25,7 +25,7 @@ pip install -r requirements-lock.txt
 python -m pytest h11_probe/test_load_encoder.py -q
 ```
 
-Expected: 7 passed (the CUDA test is skipped on a machine without a GPU). It checks that `load_encoder` recovers the exact encoder weights from every checkpoint format. The repository's own suite in `tests/` also runs with `python -m pytest tests -q`, but `tests/test_kaggle_readiness.py` has 6 failing tests that need files not in the repository (see section h).
+Expected: 7 passed (the CUDA test is skipped on a machine without a GPU). It checks that `load_encoder` recovers the exact encoder weights from every checkpoint format. The repository's own suite in `tests/` also runs with `python -m pytest tests -q` (130 passed, 4 skipped on Windows without a GPU; the gloo DDP tests run on Linux and Kaggle).
 
 **Rebuild base features** (about 1 minute on the GPU, 619 MB on disk). The feature folders are not shipped; most `h11_probe` scripts that refit probes need them:
 
@@ -42,7 +42,7 @@ For a trained model, add its checkpoint, for example `python h11_probe/extract_c
 3. **Subset probe.** Whether the first d coordinates beat other d-coordinate subsets (`subset_probe.py`).
 4. **Retraining on one RTX 3060.** Confirmed the current code trains locally with the Kaggle settings (5 epochs, lr 2e-5, batch 16, max length 256) and wrote a launcher that always trains fresh (`train_all.ps1`).
 5. **Three seeds.** Trained all four models for seeds 42, 1 and 2 and ran the analysis pipeline on each (`analyze_seed.ps1`), then paired bootstraps between models (`bootstrap.py`, `bootstrap_extra.py`).
-6. **KL-on retrains, seed 42 only.** The README run had the SIA attention-KL term on; the current code hardcodes it off. `train_kl_on.py` retrains MRL+SIA and MIPIC with it on.
+6. **KL-on retrains, seed 42 only.** The README run had the SIA attention-KL term on; the code these runs used hardcoded it off (it is now the `MIPIC_ATTENTION_KL` switch, see section h). `train_kl_on.py` retrains MRL+SIA and MIPIC with it on.
 7. **The nine Finding 1 checks.** Verified that untrained TinyBERT matching the trained models is not an artifact: pooler randomness, pipeline parity, data overlap, bootstrap, probe size, a scaled and CV-tuned probe, kNN, the epoch-selection probe, and what the paper and report say.
 8. **Kaggle versus local.** Compared the README (Kaggle) run with local retrains: logs, settings, code version and the KL term (Finding 5).
 9. **Cross-seed aggregation.** `aggregate_seeds.py` turns every per-seed result into mean, sample std, min, max and sign agreement across seeds, and applies the pre-registered decision rules ([CROSS_SEED.md](h11_probe/CROSS_SEED.md)).
@@ -97,13 +97,13 @@ All commands run from the repository root. Times are on one RTX 3060 Laptop GPU 
 **Training** (about 90 minutes per seed: MRL 11, MRL+PIC 13, MIPIC 37, MRL+SIA 29 minutes):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File h11_probe\train_all.ps1 -Seed 42      # also -Seed 1, -Seed 2; add -DryRun to preview
+powershell -ExecutionPolicy Bypass -File h11_probe\train_all.ps1 -Seed 42      # also -Seed 1, -Seed 2; add -DryRun to preview; KL is pinned off
 python h11_probe/train_kl_on.py --model mrl_sia --seed 42 --output-dir h11_probe/runs_kl/seed42
 python h11_probe/train_kl_on.py --model mipic   --seed 42 --output-dir h11_probe/runs_kl/seed42
 ```
 
 ```bash
-bash h11_probe/train_all.sh --seed 42          # Linux or Kaggle; --dry-run to preview
+bash h11_probe/train_all.sh --seed 42          # Linux or Kaggle; --dry-run to preview; KL is pinned off
 ```
 
 Each KL-on arm takes about as long as its KL-off counterpart (roughly 30 and 37 minutes; not separately timed). `train_kl_on.py --dry-run` checks that the KL term is really active without training.
@@ -174,7 +174,7 @@ Paths are relative to `h11_probe/`. "features/N" means `features/N/{train,test}_
 | `probe_grid.py` | Default `evaluate.py` probe on every (layer, width) cell, single-thread BLAS; optional README check | features/N, `expected_readme.json` | `results/N_grid.csv`, `N_preds.npz` |
 | `sts_eval.py` | STS-B Spearman for every cell, optional overlap removal | checkpoint, hub STS-B, `data/final_data.csv` | `results/N_sts.csv`, `N_sts_clean.csv`, `sts_overlap.txt` |
 | `subset_probe.py` | Prefix versus other and random coordinate subsets | features/N, `results/N_grid.csv` | `results/N_subsets*.csv` |
-| `train_all.ps1`, `train_all.sh` | Trains the four arms for one seed, always fresh | | `runs/seed<N>/` |
+| `train_all.ps1`, `train_all.sh` | Trains the four arms for one seed, always fresh, attention KL pinned off; `-AttentionKL` / `--attention-kl` trains only the SIA arms with KL on | | `runs/seed<N>/` (KL on: `runs_kl/seed<N>/`) |
 | `analyze_seed.ps1`, `analyze_seed.sh` | Steps 1 to 4 above for every finished model of one seed | `runs/seed<N>/` | features, results, `logs/analysis_*.log` |
 | `train_kl_on.py` | Trains MRL+SIA or MIPIC with attention KL on | | `runs_kl/seed<N>/` |
 | `bootstrap.py` | Paired bootstrap of macro-F1 difference per cell | `results/*_preds.npz` | `results/bootstrap_A_vs_B.csv` |
@@ -198,12 +198,14 @@ Paths are relative to `h11_probe/`. "features/N" means `features/N/{train,test}_
 
 ## h. Known issues and gotchas
 
+- **Attention KL is now a switch, on by default.** The model code comes from MIPIC_hypotheses: `MIPIC_ATTENTION_KL` (default `1`, as in the paper) turns the SIA attention-KL term (Eq. 6) on or off, and `tests/test_attention_kl_switch.py` covers it. Every run under `h11_probe/runs/` was trained with KL hardcoded off, so `train_all.ps1` and `train_all.sh` set `MIPIC_ATTENTION_KL=0` to stay reproducible. Calling `run_experiments.py` directly now trains with KL on. `train_kl_on.py` still works and forces KL on regardless of the switch. Line references to `models/mrl_sia.py` and `models/mrl_sia_pic.py` in FINDINGS.md point at the older code.
+
 - **The folder is `h11_probe`, not `h11`.** A top-level folder named `h11` shadows the PyPI `h11` HTTP library that `httpx` and therefore `transformers` and `huggingface_hub` import, which breaks model loading.
 - **Single-thread BLAS for reproducible probes.** `probe_grid.fit_one` fits under `threadpool_limits(1)` with contiguous arrays. With multithreaded BLAS, lbfgs can stop one iteration earlier or later depending on the thread count and flip a few test predictions. Reuse `fit_one` rather than calling `LogisticRegression` directly if you want bit-identical numbers.
 - **PowerShell 5.1 and stderr.** With `$ErrorActionPreference = "Stop"`, PowerShell 5.1 turns any stderr line from a native program into a terminating error, and Python writes warnings to stderr. The launchers therefore run Python through `cmd.exe` with `>> log 2>&1` and read the real exit code. They also set `PYTHONUTF8=1`, because Python writing to a redirected file otherwise uses cp1252 and can crash on non-ASCII output.
 - **Never resume a training run.** `run_experiments.py` saves a resumable `training_state.pt`, but the best-epoch tracker isn't in it, so a resumed run can keep the wrong `best.pt`. The launchers always train fresh (`MIPIC_FRESH=1`) and delete a stale `best.pt` first. Also, `run_experiments.py` exits 0 even when evaluation fails, so "finished" means `best.pt` exists and the model has an entry in `tweeteval_results.json`.
 - **Stale Kaggle notebook outputs.** In `mipic-a1-lexis.ipynb`, cell 14's source doesn't match its saved output (mode, output folder and fresh flag differ), and cell 3 was added after the recorded run. Trust the logged outputs, not the cell sources, when reconstructing the Kaggle run (Finding 5).
-- **`tests/test_kaggle_readiness.py` fails (6 tests).** Three tests read `MIPIC_Kaggle_FINAL.ipynb` and three read `kaggle/README.md`; neither file is in the repository (both have been missing since the baseline commit). This is a missing-file problem, not a code problem.
+- **`tests/test_kaggle_readiness.py` and the reference notebook.** These tests used to fail because `MIPIC_Kaggle_FINAL.ipynb` and `kaggle/README.md` were missing; both now come from MIPIC_hypotheses. `tests/test_mrl_baseline_integration.py` also needs the reference notebook `mipic.ipynb`.
 - **The pooler is untrained.** `pooler_output` in `huawei-noah/TinyBERT_General_6L_768D` is a random Gaussian 768x768 layer with zero bias, and training barely changes its effect. So "the first d dimensions" of the embedding are d random projections of the layer 6 [CLS] (Finding 9).
 - **Features are float32.** float16 changed probe F1 by up to 0.19 points, so all features are stored and probed in float32.
 - **The README numbers come from an older code version** (MIPIC_FINAL_V20, attention KL on). They can't be reproduced with the current code; local runs are higher in every seed (Findings 4 and 5).
@@ -222,7 +224,7 @@ Ordered by value for cost, highest first.
 5. **More seeds.** 90 minutes per seed. The (1,16) effect sizes vary from 4.7 to 20.4, so more seeds would tighten every estimate.
 6. **Evaluate on official TweetEval.** The current evaluation files are Kaggle Tweet Sentiment Extraction data, not the benchmark the paper uses.
 7. **Get the MIPIC_FINAL_V20 code** to explain the remaining MRL+SIA gap in Finding 5.
-8. **Layer-wise POS probes for H8 and H9.** Extend `pos_probe/` to read every layer and the non-prefix dimensions.
+8. **Layer-wise POS probes for H8 and H9.** The POS probes were removed from this repository; start from `pos_probe/` in the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1) and extend it to read every layer and the non-prefix dimensions.
 9. **Block and granularity probes for H1 and H2.** Probe coordinate blocks of the pooled output on tasks of different granularity (3-class sentiment, 6-class emotion, 77-class Banking77).
 10. **H4 CKA signal test.** Compare CKA of the trained prefix against random and untrained baselines.
 11. **H5 token importance.** Check whether CLS-token similarity tracks token importance (for example via deletion tests).

@@ -1,7 +1,8 @@
 """Train mrl_sia or mipic with the SIA attention-KL term switched ON.
 
-The current repository hardcodes ``use_attention_kl=False`` in
-models/mrl_sia.py and models/mrl_sia_pic.py, while the README's Kaggle run
+The code used for the h11_probe runs hardcoded ``use_attention_kl=False`` in
+models/mrl_sia.py and models/mrl_sia_pic.py (now the MIPIC_ATTENTION_KL switch,
+default on; this wrapper forces KL on whatever the switch says), while the README's Kaggle run
 (code version MIPIC_FINAL_V20) logged a nonzero ``sia_attn_loss``. This wrapper
 reproduces the KL-on configuration without editing any repository file:
 

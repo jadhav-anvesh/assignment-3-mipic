@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 from pathlib import Path
 
+import pytest
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -39,6 +41,7 @@ def _worker(rank: int, world_size: int, init_file: str, results_file: str) -> No
     dist.destroy_process_group()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="gloo cannot create a device on Windows (makeDeviceForHostname); runs on Kaggle/Linux")
 def test_two_rank_gather_preserves_grad_and_labels(tmp_path: Path) -> None:
     init_file = str(tmp_path / "init")
     results = [str(tmp_path / f"rank{rank}.txt") for rank in range(2)]

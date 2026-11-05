@@ -50,6 +50,8 @@ class MIPICConfig:
     align_layers: Tuple[int, ...] = (1, 2, 3, 4, 5, 6)
     # Eq. (4)/(5) attention softmax temperature; see MRLSIAPICConfig.
     sia_temperature: float = 1.0
+    # Eq. (6) attention KL; see MRLSIAPICConfig.
+    use_attention_kl: bool = True
     pic_pipeline_pairs: Tuple[Tuple[int, ...], ...] = TINYBERT_PIC_PIPELINE_PAIRS
     d_att: int = 64
     base_k: int = 64
@@ -93,6 +95,7 @@ class TinyBERT_MIPIC(nn.Module):
             core_config = MRLSIAPICConfig(
                 temperature=self.config.temperature,
                 sia_temperature=self.config.sia_temperature,
+                use_attention_kl=self.config.use_attention_kl,
                 pic_temperature=self.config.pic_temperature,
                 pic_detach_target=self.config.pic_detach_target,
                 matryoshka_dims=self.config.matryoshka_dims,

@@ -41,7 +41,7 @@ from evaluate import MRLEvaluationConfig, evaluate_tweeteval, validation_probe_s
 from losses.mrl_loss import MRL_NESTED_DIMS
 from models.mipic import MIPICConfig, TinyBERT_MIPIC, create_mipic_optimizer
 from models.mrl_pic import TinyBERT_MRL_PIC, create_mrl_pic_optimizer
-from models.mrl_sia import TinyBERT_MRL_SIA, create_mrl_sia_optimizer
+from models.mrl_sia import MRLSIAConfig, TinyBERT_MRL_SIA, create_mrl_sia_optimizer
 from models.tinybert import MRL_READOUT, load_tinybert_6l, load_tinybert_tokenizer
 from train import (
     MRLBaselineConfig,
@@ -639,6 +639,7 @@ def run_experiment(
         "learning_rate": config.learning_rate,
         "temperature": config.temperature,
         "sia_temperature": MIPICConfig().sia_temperature,
+        "attention_kl": _env_bool("MIPIC_ATTENTION_KL", True),
         "mrl_readout": MRL_READOUT,
         "pic_detach_target": MIPICConfig().pic_detach_target,
         "max_grad_norm": config.max_grad_norm,
@@ -790,7 +791,10 @@ def run_experiment(
                     _assert_checkpoint(ckpt_path)
 
         elif model_name == "mrl_sia":
-            mrl_sia = TinyBERT_MRL_SIA(device=device)
+            mrl_sia = TinyBERT_MRL_SIA(
+                device=device,
+                config=MRLSIAConfig(use_attention_kl=_env_bool("MIPIC_ATTENTION_KL", True)),
+            )
             if eval_only:
                 _load_model_checkpoint(mrl_sia, ckpt_path, device)
                 history = all_results.get("training_history", {}).get(model_name, [])
@@ -866,7 +870,10 @@ def run_experiment(
             trained_encoder = _trained_model.encoder
 
         elif model_name == "mipic":
-            mipic = TinyBERT_MIPIC(device=device)
+            mipic = TinyBERT_MIPIC(
+                device=device,
+                config=MIPICConfig(use_attention_kl=_env_bool("MIPIC_ATTENTION_KL", True)),
+            )
             if eval_only:
                 _load_model_checkpoint(mipic, ckpt_path, device)
                 history = all_results.get("training_history", {}).get(model_name, [])
