@@ -99,7 +99,7 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 | 1 | UD EWT loader: download, verify, parse; tests | Done |
 | 2 | Feature extraction, layers 0–6: token first-subword vectors (UD EWT) and [CLS] vectors (tweets) | Done |
 | 3 | Probes: layer profiles and prefix/suffix cells, for POS and sentiment; full run on base | Done |
-| 4 | Launcher scripts: extract → probe → delete features, for every model of a seed | To do |
+| 4 | Launcher: extract → probe → delete features, for every model of the chosen seeds | Done |
 | 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | To do |
 | 6 | Plots of the layer profiles | To do |
 | 7 | Run on the trained checkpoints; write up the findings | To do |
@@ -231,6 +231,38 @@ python H2/probe.py --name base --tasks sentiment   # one task only
 python -m pytest H2/ -q                            # 25 passed, about a minute on CPU
 ```
 
+### Step 4. Launcher
+
+**Files.** [run_seed.py](run_seed.py), [test_run_seed.py](test_run_seed.py).
+
+**What it does.** Runs steps 2 and 3 for every model of the chosen seeds, unattended:
+
+1. finds `MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed<N>/checkpoints/<model>/best.pt` for each seed, and stops before starting if a requested checkpoint is missing;
+2. for each model, named `<model>_s<N>` (e.g. `mipic_s42`), in the order MRL, MRL+PIC, MIPIC, MRL+SIA, so the three models the decision rules need are finished first: runs `extract_features.py`, then `probe.py`;
+3. deletes the model's features (about 6 GB) once its results are complete, so the disk never holds more than one model's features at a time;
+4. prints one line per step and a summary table; each model's full output goes to `H2/logs/<name>.log` (not tracked).
+
+**Choices and why.**
+- **One Python launcher instead of a `.sh` and a `.ps1` script.** It runs unchanged on Windows and Linux, so the logic isn't kept in two copies, and it avoids a Windows PowerShell 5.1 problem that the h11 launchers had to work around: PowerShell turns any line Python writes to stderr, such as a warning, into a fatal error.
+- **Safe to rerun.** A model counts as done only when its results hold all 52 probes and its predictions file exists; done models are skipped. Steps 2 and 3 each resume on their own, so an interrupted model continues where it stopped. Rerunning the same command after any interruption is always correct.
+- **A failure doesn't stop the run.** A failed step is reported with its exit code and log file, the model's later steps are skipped, and the next model starts. The summary lists the failures and the command exits with code 1.
+- **Smoke tests stay separate.** `--limit N` extracts only the first N sentences of each split, and is refused unless results go to a different `--results-dir`, so a smoke test can't overwrite real results.
+
+**Checked.** The tests use a fake checkpoint tree and a stand-in for the two steps: run order, skipping finished models, not skipping incomplete results, carrying on after a failure, cleanup, `--keep-features` and dry runs. An end-to-end smoke run on the real MIPIC seed 42 checkpoint (`--limit 50`) loaded the checkpoint, extracted all five parts, fitted all 52 probes, wrote the results and deleted the features in 1.4 minutes; rerunning it skipped the finished model.
+
+**Time.** About 1–1.5 hours per model on this laptop, so roughly 12–18 hours for the 12 trained models. Running one seed at a time (`--seeds 42`, then `1`, then `2`) splits the work into three sessions of 4–6 hours.
+
+**Run** (from the repository root):
+
+```bash
+python H2/run_seed.py --seeds 42 1 2 --dry-run     # show the plan: 12 models, nothing run
+python H2/run_seed.py --seeds 42                   # one seed, 4 models
+python H2/run_seed.py --seeds 42 1 2               # all 12 trained models
+python H2/run_seed.py --seeds 42 --models mipic    # a single model
+python H2/run_seed.py --base                       # base; already done in step 3, so this only deletes its features
+python -m pytest H2/ -q                            # 32 passed, about a minute on CPU
+```
+
 ## Layout
 
 ```text
@@ -242,7 +274,10 @@ H2/
 ├── test_extract_features.py  # Step 2: tests
 ├── probe.py                  # Step 3: POS and sentiment probes per layer and coordinate block
 ├── test_probe.py             # Step 3: tests
+├── run_seed.py               # Step 4: launcher, extract -> probe -> delete features per model
+├── test_run_seed.py          # Step 4: tests
 ├── data/                     # Downloaded UD EWT files (not tracked)
+├── logs/<name>.log           # Full output of each model's run (not tracked)
 ├── features/<name>/          # Extracted features and probe progress (not tracked)
 └── results/                  # Result tables, one set per model (tracked)
     ├── <name>_probe.csv      #   one row per probe
