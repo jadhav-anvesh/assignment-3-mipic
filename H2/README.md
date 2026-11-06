@@ -48,7 +48,7 @@ Layer l = 0 is the embedding output and l = 1…6 are the transformer layers. Th
 **Decision rules.**
 - **(a) supported** if, in base TinyBERT, the POS peak layer is earlier than the sentiment peak layer.
 - **(b) supported** if MIPIC's POS accuracy at layers 1–3 is within seed noise of MRL's (defined below).
-- **(c) supported** if, in MIPIC, POS(suffix) ≥ POS(prefix), while MIPIC's sentiment(prefix) is higher than MRL's at the same layer and width.
+- **(c) supported** if, in MIPIC, POS(suffix) ≥ POS(prefix), while MIPIC's sentiment(prefix) is higher than MRL's at the same layer and width. Concretely, at each checkpoint (1,16), (2,32), (3,64): MIPIC's POS(suffix) − POS(prefix) ≥ 0 in every training seed, **and** MIPIC − MRL sentiment(prefix) has its 95% paired bootstrap CI above zero in every seed. (c) is supported if both hold at all three checkpoints; otherwise it is reported as "supported at k of 3 checkpoints". The peak in rule (a) is the layer with the highest full-width score, with ties going to the earlier layer.
 - **Falsified** if MIPIC's POS accuracy at layers 1–3 drops below MRL's by more than seed noise (PIC damages low-level features), or if MRL+PIC and MRL give the same profiles (PIC has no measurable effect on early layers).
 
 **Seed noise: the operational rule.** Applied separately at each layer l = 1, 2, 3, to POS accuracy at full width (768D):
@@ -74,7 +74,7 @@ Why this form:
 - **σ from MRL alone**, because MRL is the reference. Including MIPIC's own variation would let an unstable MIPIC raise the threshold and hide its own damage.
 - **The "inconclusive" outcome** stops a weak test from being reported as support: (b) claims there is *no* difference, and with 3 seeds a plain t-test would almost never reject it.
 
-**Statistics.** Mean ± std over training seeds, paired differences between models within each seed, and 95% paired bootstrap confidence intervals on the test set (1,000 resamples).
+**Statistics.** Mean ± std over training seeds, paired differences between models within each seed, and 95% paired bootstrap confidence intervals on the test set (1,000 resamples, seed 0). POS resamples whole test sentences (2,077), because words in one sentence are not independent and resampling single words would make the intervals too narrow; sentiment resamples test tweets (3,432) and averages macro-F1 over the 3 probe seeds in each resample.
 
 ## Decisions
 
@@ -88,7 +88,8 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 2. **Seed noise: T = max(2σ, 0.5 points), σ from MRL, consistent CIs in all 3 seeds**. The full rule and its reasons are under "Seed noise: the operational rule" above.
 3. **Trained models: the existing `best.pt` checkpoints for seeds 42, 1 and 2**, the same ones h11 probed, rather than new training runs. They come from the unmodified `run_experiments.py`, so they are ordinary trained models; reusing them saves about 4.5 GPU hours and keeps the link to h11's results.
    - **Location:** `MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed{42,1,2}/checkpoints/{mrl,mrl_pic,mipic,mrl_sia}/best.pt` (not tracked in git). `best.pt` is the epoch chosen during training; `model.pt` beside it is the last epoch and is not used.
-   - **Verified**: all 12 load strictly and differ from base. MIPIC seed 42, re-extracted here, reproduces h11's saved test predictions at (layer 1, 16D) and the pooler at 768D, with 18 and 15 of 3,432 predictions different (54.50 vs 54.65 and 67.72 vs 67.77 macro-F1). The small differences come from CPU vs GPU arithmetic and scikit-learn 1.5.1 vs 1.9.0; the other seeds' MIPIC and seed 42's MRL and MRL+PIC score 10 to 20 points away at (1,16).
+   - **Verified:** all 12 load strictly and differ from base. MIPIC seed 42, re-extracted here, reproduces h11's saved test predictions at (layer 1, 16D) and the pooler at 768D, with 18 and 15 of 3,432 predictions different (54.50 vs 54.65 and 67.72 vs 67.77 macro-F1). The small differences come from CPU vs GPU arithmetic and scikit-learn 1.5.1 vs 1.9.0; the other seeds' MIPIC and seed 42's MRL and MRL+PIC score 10 to 20 points away at (1,16).
+4. **Rule (c) and the bootstrap made concrete before any trained-model result.** The original wording of rule (c) named no statistical test, so the version under "Decision rules" fixes one in the style of the seed-noise rule: a direction that must hold in every seed, with the paired CI for the sentiment gain. The bootstrap resamples UD test sentences rather than words, for the reason under "Statistics".
 
 **Expected sanity check.** At layer 0, [CLS] is the same vector for every sentence (the [CLS] token embedding plus position 0, then LayerNorm), so sentiment at layer 0 should be at chance. POS at layer 0 is a non-contextual word-embedding probe and should already be high.
 
@@ -100,7 +101,7 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 | 2 | Feature extraction, layers 0–6: token first-subword vectors (UD EWT) and [CLS] vectors (tweets) | Done |
 | 3 | Probes: layer profiles and prefix/suffix cells, for POS and sentiment; full run on base | Done |
 | 4 | Launcher: extract → probe → delete features, for every model of the chosen seeds | Done |
-| 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | To do |
+| 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | Done |
 | 6 | Plots of the layer profiles | To do |
 | 7 | Run on the trained checkpoints; write up the findings | To do |
 
@@ -263,6 +264,46 @@ python H2/run_seed.py --base                       # base; already done in step 
 python -m pytest H2/ -q                            # 32 passed, about a minute on CPU
 ```
 
+### Step 5. Bootstrap, aggregation and decision rules
+
+**Files.** [analyze.py](analyze.py), [test_analyze.py](test_analyze.py).
+
+**What it does.** Reads every `results/<name>_probe.csv` and `<name>_preds.npz` and:
+
+1. **Aggregates across training seeds:** for each arm (base, MRL, MRL+PIC, MIPIC, MRL+SIA), task and cell, the score in each seed, the mean and the sample SD.
+2. **Runs paired bootstraps:** each trained model against MRL of the same seed, and every model against base, for all 26 cells. Both models in a comparison are scored on the same resampled sentences or tweets, and every comparison uses the same resamples.
+3. **Applies the decision rules** exactly as written under "Decision rules":
+   - **(a)** the peak layers of base, plus the share of bootstrap resamples in which the POS peak comes first (the trained models are shown alongside for comparison, not as part of the rule);
+   - **(b)** the seed-noise rule at layers 1–3, with T computed from MRL's seed SD, giving "damage", "within noise" or "inconclusive" per layer and an overall verdict;
+   - **(c)** both parts at each checkpoint;
+   - **PIC effect**, the second falsification check: MRL+PIC against MRL at layers 1–3, for both tasks.
+
+   A rule that needs several seeds reports "pending" until two exist, and every verdict is marked provisional until all three seeds are in.
+
+**Outputs.**
+- `results/summary_cells.csv`, `results/bootstrap.csv`, `results/decisions.csv`: the numbers behind every table and verdict.
+- [RESULTS.md](RESULTS.md): the same as readable tables (layer profiles, prefix and suffix, one section per rule, and a summary). It is generated, not edited by hand.
+
+**Checked.** The tests build synthetic results with known effects and check that each one gets the right verdict:
+- identical MIPIC and MRL POS predictions give "within noise";
+- a 5-point drop in every seed gives "damage";
+- a drop with one CI crossing zero gives "inconclusive";
+- a sentiment gain in the prefix satisfies (c), and no gain gives "supported at 0 of 3 checkpoints";
+- an MRL+PIC change at layer 1 counts as an effect, and no change falsifies;
+- one seed gives "pending" and a provisional report;
+- base alone still renders.
+
+They also check that the macro-F1 used in the bootstrap equals scikit-learn's.
+
+**First real result: rule (a) on base.** POS peaks at layer 4 and sentiment at layer 6, so (a) is **supported**. The POS peak comes first in 97% of bootstrap resamples: POS peaks at layer 4 in 84% of them (layer 3: 10%, layer 2: 6%), and sentiment at layer 6 in 96%. Rules (b), (c) and the PIC check wait for the trained models (step 7).
+
+**Run** (from the repository root; seconds to a minute):
+
+```bash
+python H2/analyze.py                 # rerun whenever new results arrive
+python -m pytest H2/ -q              # 41 passed
+```
+
 ## Layout
 
 ```text
@@ -276,11 +317,17 @@ H2/
 ├── test_probe.py             # Step 3: tests
 ├── run_seed.py               # Step 4: launcher, extract -> probe -> delete features per model
 ├── test_run_seed.py          # Step 4: tests
+├── analyze.py                # Step 5: bootstrap, cross-seed aggregation, decision rules
+├── test_analyze.py           # Step 5: tests
+├── RESULTS.md                # Step 5 output: every table and verdict (generated once trained results exist)
 ├── data/                     # Downloaded UD EWT files (not tracked)
 ├── logs/<name>.log           # Full output of each model's run (not tracked)
 ├── features/<name>/          # Extracted features and probe progress (not tracked)
 └── results/                  # Result tables, one set per model (tracked)
     ├── <name>_probe.csv      #   one row per probe
     ├── <name>_cgrid.csv      #   validation score of every C
-    └── <name>_preds.npz      #   test predictions, for the bootstrap
+    ├── <name>_preds.npz      #   test predictions, for the bootstrap
+    ├── summary_cells.csv     #   step 5: every cell, per seed, mean and SD
+    ├── bootstrap.csv         #   step 5: paired comparisons with 95% CIs
+    └── decisions.csv         #   step 5: every rule and check with its verdict
 ```
