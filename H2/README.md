@@ -102,7 +102,7 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 | 3 | Probes: layer profiles and prefix/suffix cells, for POS and sentiment; full run on base | Done |
 | 4 | Launcher: extract → probe → delete features, for every model of the chosen seeds | Done |
 | 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | Done |
-| 6 | Plots of the layer profiles | To do |
+| 6 | Figures: layer profiles, seed-noise checks, prefix and suffix at the checkpoints | Done |
 | 7 | Run on the trained checkpoints; write up the findings | To do |
 
 ### Step 1. UD English EWT loader
@@ -304,6 +304,34 @@ python H2/analyze.py                 # rerun whenever new results arrive
 python -m pytest H2/ -q              # 41 passed
 ```
 
+### Step 6. Figures
+
+**Files.** [plots.py](plots.py), [test_plots.py](test_plots.py).
+
+**What it does.** Draws three figures from the tables of step 5, into `figures/`:
+
+| Figure | What it shows | Rule |
+|---|---|---|
+| `layer_profiles.png` | POS accuracy and sentiment macro-F1 at layers 0–6, one line per model (mean over training seeds, whiskers ±1 SD), with base's peak layer marked | (a), and the shape behind (b) |
+| `seed_noise.png` | MIPIC − MRL POS accuracy at layers 1–3, and MRL+PIC − MRL for POS and sentiment: each seed's difference with its 95% bootstrap CI, the mean over seeds, the ±T noise band in grey and the verdict above each layer | (b) and the PIC-effect check |
+| `checkpoints.png` | POS accuracy of the prefix (hollow) and suffix (filled) at (1,16), (2,32), (3,64) for base, MRL and MIPIC; and MIPIC − MRL sentiment in the prefix, per seed with CIs | (c) |
+
+**Choices and why.**
+- **POS and sentiment in separate panels**, never two y-axes on one plot: two scales on one plot invite reading meaning into where the lines cross.
+- **The sentiment profile is scaled to layers 1–6.** Layer 0 [CLS] is the same vector for every tweet, so it scores about 19 (chance) for every model; on a shared scale it would flatten the differences between models where the peak is decided. Its value is stated in the panel.
+- **Colour follows the model, never its position:** MRL blue, MRL+PIC orange, MIPIC aqua, MRL+SIA yellow, base neutral grey as the untrained reference. The four colours pass a colour-vision-deficiency check for neighbouring colours (smallest simulated difference ΔE 9.1, above the 8 target). MIPIC's aqua and MRL+SIA's yellow have under 3:1 contrast against the background, so every model also has its own marker shape and a direct label at the end of its line, and identity never rests on colour alone.
+- **Seeds are told apart by marker shape** (circle 42, square 1, triangle 2), in neutral ink in the legends, because colour already means the model.
+- **Every plotted number is also a table** in `RESULTS.md`.
+
+**Checked.** The tests render all three figures from synthetic results with every model, and from base alone (the state before trained results exist, where panels without data say so), and check that `analyze.py` must run first. The layouts were also inspected on synthetic models built from base's real predictions, so label crowding and axis ranges match the real data.
+
+**Run** (from the repository root, after `analyze.py`):
+
+```bash
+python H2/plots.py
+python -m pytest H2/ -q              # 45 passed
+```
+
 ## Layout
 
 ```text
@@ -320,6 +348,9 @@ H2/
 ├── analyze.py                # Step 5: bootstrap, cross-seed aggregation, decision rules
 ├── test_analyze.py           # Step 5: tests
 ├── RESULTS.md                # Step 5 output: every table and verdict (generated once trained results exist)
+├── plots.py                  # Step 6: the three figures
+├── test_plots.py             # Step 6: tests
+├── figures/                  # Step 6 output: layer_profiles.png, seed_noise.png, checkpoints.png
 ├── data/                     # Downloaded UD EWT files (not tracked)
 ├── logs/<name>.log           # Full output of each model's run (not tracked)
 ├── features/<name>/          # Extracted features and probe progress (not tracked)

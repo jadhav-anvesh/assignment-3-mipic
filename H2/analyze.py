@@ -257,7 +257,10 @@ def analyze(models: Dict[str, Model], boot: Bootstrap) -> Dict[str, pd.DataFrame
                     comparisons.append(compare(boot, model, mrl[model.seed], task, cell))
                 if base is not None:
                     comparisons.append(compare(boot, model, base, task, cell))
-    bootstrap = pd.DataFrame(comparisons)
+    # Explicit columns, so the CSV keeps its header even before any comparison exists (base alone).
+    bootstrap = pd.DataFrame(comparisons, columns=[
+        "a", "b", "seed", "task", "layer", "coords", "start", "stop",
+        "score_a", "score_b", "diff", "ci_low", "ci_high", "excludes_zero"])
 
     def lookup(a: str, b: str, task: str, cell: probe.Cell) -> pd.Series:
         rows = bootstrap[(bootstrap.a == a) & (bootstrap.b == b) & (bootstrap.task == task)
