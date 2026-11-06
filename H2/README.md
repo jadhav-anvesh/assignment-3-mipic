@@ -19,7 +19,7 @@ PIC supervises only the [CLS] prefix at fixed (layer, width) checkpoints: `hidde
 
 ## Test design
 
-**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too when its checkpoint is available. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in [h11_probe/](../h11_probe/). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
+**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in [h11_probe/](../h11_probe/). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
 
 **Tasks.**
 
@@ -37,7 +37,7 @@ Layer l = 0 is the embedding output and l = 1…6 are the transformer layers. Th
 | POS | UD EWT train (204,577 words) | UD EWT dev (25,149 words) | UD EWT test (25,094 words) |
 | Sentiment | 90% of `tweet_train.csv` (stratified) | the other 10% (about 2,670 rows) | `tweet_test.csv` (3,432 rows), unchanged |
 
-**Probes.** Logistic regression on frozen features, standardized with the statistics of the fitting split. The regularization strength C is chosen on the validation split from a fixed grid, and the chosen model is scored on the test split. The standardization and the tuned C fix a bias found in h11 (Finding 1, checks 5 and 6): `evaluate.py`'s fixed, unscaled probe (C = 1) favours models whose features are larger in scale, and the trained models' features are about twice base's.
+**Probes.** Multinomial logistic regression on frozen features, standardized with the statistics of the fitting split. The regularization strength C is chosen on the validation split from the fixed grid {0.001, 0.01, 0.1, 1, 10} (accuracy for POS, macro-F1 for sentiment; ties go to the smaller C), and the chosen model is scored on the test split. The objective is that of `evaluate.py`'s `LogisticRegression` (lbfgs, L2, at most 1,000 iterations), solved with full-batch L-BFGS in PyTorch (step 3 explains why). The standardization and the tuned C fix a bias found in h11 (Finding 1, checks 5 and 6): `evaluate.py`'s fixed, unscaled probe (C = 1) favours models whose features are larger in scale, and the trained models' features are about twice base's.
 
 **Probe seeds.** Logistic regression is convex and the solver is deterministic, so refitting the same POS probe gives the same answer; POS gets one fit per cell. For sentiment, the probe seed sets the 90/10 validation split: 3 probe seeds (0, 1, 2) per cell, with the score averaged over them.
 
@@ -98,8 +98,8 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 |---|---|---|
 | 1 | UD EWT loader: download, verify, parse; tests | Done |
 | 2 | Feature extraction, layers 0–6: token first-subword vectors (UD EWT) and [CLS] vectors (tweets) | Done |
-| 3 | Probes: layer profiles and prefix/suffix cells, for POS and sentiment | To do |
-| 4 | Launcher scripts: extract → probe → delete features, per model and seed; full run on base | To do |
+| 3 | Probes: layer profiles and prefix/suffix cells, for POS and sentiment; full run on base | Done |
+| 4 | Launcher scripts: extract → probe → delete features, for every model of a seed | To do |
 | 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | To do |
 | 6 | Plots of the layer profiles | To do |
 | 7 | Run on the trained checkpoints; write up the findings | To do |
@@ -166,6 +166,71 @@ python H2/extract_features.py --name mipic_s42 \
 python -m pytest H2/ -q                                  # 14 passed, about a minute on CPU
 ```
 
+### Step 3. Probes
+
+**Files.** [probe.py](probe.py), [test_probe.py](test_probe.py); results for base in [results/](results/).
+
+**What it does.** For one model's features, it fits 13 cells per task: the layer profile (layers 0–6, all 768 coordinates) and the prefix [0:d] and suffix [d:768] at the PIC checkpoints (1,16), (2,32) and (3,64). POS gets one probe per cell; sentiment gets one per cell and probe seed, 52 probes in all. Each probe:
+
+1. standardizes the features with the mean and standard deviation of its fitting split (coordinates that are constant there are centred, not scaled);
+2. fits a logistic regression for each C in {0.001, 0.01, 0.1, 1, 10}, each from zero;
+3. keeps the C with the best validation score (POS: accuracy on UD dev; sentiment: macro-F1 on the held-out 10%; ties go to the smaller C);
+4. scores that model on the test split and saves its test predictions for the bootstrap in step 5.
+
+**Why PyTorch for the logistic regression.** The objective is exactly that of `evaluate.py`'s `LogisticRegression` (multinomial, L2, intercept not penalized) with its stopping rule (largest gradient entry below 1e-4, at most 1,000 iterations), minimized with full-batch L-BFGS in PyTorch. scikit-learn's solver computes the multinomial loss on one thread and copies the features to float64, 1.26 GB for UD train alone; PyTorch uses every core in float32. On base, layer 6, all 768 coordinates, the two agree:
+
+| C | Validation accuracy, PyTorch | Validation accuracy, scikit-learn | Time, PyTorch | Time, scikit-learn |
+|---:|---:|---:|---:|---:|
+| 0.001 | 94.89 | 94.89 | 8 s | 46 s |
+| 0.01 | 95.49 | 95.49 | 10 s | 47 s |
+| 0.1 | 95.40 | 95.41 | 14 s | 57 s |
+| 1 | 95.14 | 95.07 | 22 s | 70 s |
+
+The tests also check, on synthetic data, that the PyTorch probe gives the same predictions (≥ 99.5% identical) and class probabilities (to 0.002) as scikit-learn's `LogisticRegression`. Warm starts across C are not used: with 200k rows, scikit-learn's scaled penalty let a warm-started fit at C = 10 stop after 0 iterations, i.e. report the C = 1 solution under another name.
+
+**Outputs** (in `results/`):
+- `<name>_probe.csv`: one row per probe: task, layer, coordinates, probe seed, chosen C, validation score, test accuracy and macro-F1, iterations, and flags for "not converged" and "C at the edge of the grid".
+- `<name>_cgrid.csv`: the validation score of every C for every probe, so the choice of C can be checked.
+- `<name>_preds.npz`: the chosen model's test predictions per probe, plus the test labels.
+
+Each finished probe is saved in `features/<name>/probe_progress/`, so an interrupted run resumes without refitting. The thread count changes only float rounding (on base, test accuracy 95.62 at both 12 and 16 threads), so it is recorded per row rather than fixed.
+
+**Base TinyBERT results.** These are the untrained starting point; tests between models come in step 5. Sentiment values are means over the 3 probe seeds.
+
+| Layer | POS accuracy, full | Sentiment macro-F1, full |
+|---:|---:|---:|
+| 0 | 88.05 | 19.07 |
+| 1 | 94.91 | 67.77 |
+| 2 | 95.98 | 69.65 |
+| 3 | 96.04 | 72.00 |
+| 4 | **96.13** | 72.79 |
+| 5 | 95.77 | 72.67 |
+| 6 | 95.62 | **73.55** |
+
+| Checkpoint | POS prefix | POS suffix | Sentiment prefix | Sentiment suffix |
+|---|---:|---:|---:|---:|
+| (1,16) | 56.75 | 94.69 | 41.06 | 68.01 |
+| (2,32) | 64.98 | 95.98 | 56.98 | 69.66 |
+| (3,64) | 73.89 | 95.92 | 68.23 | 71.63 |
+
+- **Sanity checks pass.** Layer 0 [CLS] is exactly the same vector for every tweet, so its sentiment probe predicts one class (accuracy 40.06%, the share of the majority class, macro-F1 19.07). Layer 0 POS (88.05%) is a non-contextual word-embedding probe, well above the 16.5% majority baseline.
+- **In base, POS peaks at layer 4 and sentiment at layer 6**, the ordering rule (a) predicts; step 5 decides whether the difference is reliable.
+- **In base, the prefixes hold little of either task** and the suffixes almost all of it, as expected for a model never trained to order its coordinates.
+
+**Flags in the base run.**
+- *C at the edge of the grid.* The POS prefix cells chose C = 10, the weakest regularization: with 16–64 coordinates and 204,577 training words there is little to regularize, and a larger C would change little. Layer 0 POS chose C = 0.001, the strongest. Sentiment layer 0 ties at every C (it can only predict one class) and so takes the smallest. Five other sentiment probes chose 0.001, each with a validation score 0.03 to 0.44 points above C = 0.01. The grid was fixed in advance and is not widened after seeing results.
+- *Not converged.* Two sentiment probes at layer 1 (seed 2: all coordinates at C = 10, and the suffix at C = 1) stopped at 1,000 iterations; they are flagged in the CSV.
+
+**Cost per model.** 52 probes took 58 minutes on base at 16 threads under sustained load. A full-width or suffix POS cell (5 fits) took 3–5 minutes in that run and 2.3 minutes on a cool machine at 12 threads; the laptop slows under sustained load. Most sentiment probes take under a minute. With extraction (step 2), a model takes about 1–1.5 hours.
+
+**Run** (from the repository root; needs the model's features from step 2):
+
+```bash
+python H2/probe.py --name base
+python H2/probe.py --name base --tasks sentiment   # one task only
+python -m pytest H2/ -q                            # 25 passed, about a minute on CPU
+```
+
 ## Layout
 
 ```text
@@ -175,7 +240,12 @@ H2/
 ├── test_ud_data.py           # Step 1: tests
 ├── extract_features.py       # Step 2: layer 0-6 UD word and tweet [CLS] features
 ├── test_extract_features.py  # Step 2: tests
+├── probe.py                  # Step 3: POS and sentiment probes per layer and coordinate block
+├── test_probe.py             # Step 3: tests
 ├── data/                     # Downloaded UD EWT files (not tracked)
-├── features/<name>/          # Extracted features (not tracked)
-└── results/                  # Result tables (tracked; added in step 3)
+├── features/<name>/          # Extracted features and probe progress (not tracked)
+└── results/                  # Result tables, one set per model (tracked)
+    ├── <name>_probe.csv      #   one row per probe
+    ├── <name>_cgrid.csv      #   validation score of every C
+    └── <name>_preds.npz      #   test predictions, for the bootstrap
 ```
