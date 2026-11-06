@@ -137,7 +137,9 @@ def layer_profiles(summary: pd.DataFrame, decisions: pd.DataFrame, path: Path) -
             pad = (high - low) * 0.12
             ax.set_ylim(low - pad, high + pad)
             layer0 = rows[rows.layer == 0]["mean"]
-            ax.text(0.98, 0.03, f"Layer 0, off scale: {layer0.min():.1f}–{layer0.max():.1f} (chance level)",
+            span = (f"{layer0.min():.1f}" if round(layer0.min(), 1) == round(layer0.max(), 1)
+                    else f"{layer0.min():.1f}–{layer0.max():.1f}")
+            ax.text(0.98, 0.03, f"Layer 0, off scale: {span} for every model (chance level)",
                     transform=ax.transAxes, fontsize=7.5, color=MUTED, va="bottom", ha="right")
         # Headroom above the lines for the peak note.
         lo, hi = ax.get_ylim()

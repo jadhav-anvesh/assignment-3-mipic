@@ -17,6 +17,25 @@ PIC supervises only the [CLS] prefix at fixed (layer, width) checkpoints: `hidde
 - **(b)** MIPIC's early layers keep their POS information.
 - **(c)** That information sits in the coordinates outside the PIC prefix.
 
+## Result
+
+Three training seeds of MRL, MRL+PIC, MIPIC and MRL+SIA, plus base TinyBERT; 676 probes. Details and caveats are in step 7, every number in [RESULTS.md](RESULTS.md).
+
+| Rule | Verdict |
+|---|---|
+| (a) POS peaks at a lower layer than sentiment, base | **Supported**: POS peaks at layer 4, sentiment at layer 6 (POS first in 97% of bootstrap resamples) |
+| (b) MIPIC keeps POS at layers 1–3 | **Supported**: MIPIC − MRL is +0.01, −0.18 and −0.34 points, all within the noise threshold of 0.5 |
+| (c) POS outside the prefix, sentiment gain inside it | **Supported at 1 of 3 checkpoints**: holds at (2,32) in every seed; fails at (1,16), where one seed shows no gain, and at (3,64), where no seed does |
+| Falsification check: PIC changes the early layers at all | **Falsified**: MRL+PIC's full-width layers 1–3 match MRL's within the noise threshold, for POS and for sentiment |
+
+**By the decision rules, the hypothesis is falsified**, on the second criterion: PIC has no measurable effect on the full-width early layers. That also limits what (b) shows: MIPIC keeps POS at layers 1–3 largely because PIC hardly changes those layers at all.
+
+PIC is far from inert, though; its effects are concentrated elsewhere:
+- **In the small prefix it supervises.** At (2,32), MIPIC's prefix holds 4.6 to 5.9 macro-F1 points more sentiment than MRL's, in every seed. At (3,64), MIPIC's prefix holds 3.6 to 6.2 points less POS than MRL's, in every seed, with no sentiment gain in exchange.
+- **In the late layers.** Compared with MRL, MIPIC loses 0.7, 1.2 and 2.2 points of POS accuracy at layers 4, 5 and 6, and 1.6 to 2.6 points of sentiment there, with every CI below zero in every seed.
+
+The paper's statement that PIC preserves low-level features holds for the early layers, which PIC barely touches. It does not hold for the network as a whole.
+
 ## Test design
 
 **Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in [h11_probe/](../h11_probe/). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
@@ -103,7 +122,7 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 | 4 | Launcher: extract → probe → delete features, for every model of the chosen seeds | Done |
 | 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | Done |
 | 6 | Figures: layer profiles, seed-noise checks, prefix and suffix at the checkpoints | Done |
-| 7 | Run on the trained checkpoints; write up the findings | To do |
+| 7 | Run on the trained checkpoints; write up the findings | Done |
 
 ### Step 1. UD English EWT loader
 
@@ -251,7 +270,7 @@ python -m pytest H2/ -q                            # 25 passed, about a minute o
 
 **Checked.** The tests use a fake checkpoint tree and a stand-in for the two steps: run order, skipping finished models, not skipping incomplete results, carrying on after a failure, cleanup, `--keep-features` and dry runs. An end-to-end smoke run on the real MIPIC seed 42 checkpoint (`--limit 50`) loaded the checkpoint, extracted all five parts, fitted all 52 probes, wrote the results and deleted the features in 1.4 minutes; rerunning it skipped the finished model.
 
-**Time.** About 1–1.5 hours per model on this laptop, so roughly 12–18 hours for the 12 trained models. Running one seed at a time (`--seeds 42`, then `1`, then `2`) splits the work into three sessions of 4–6 hours.
+**Time.** In the full run (step 7) each trained model took 40–45 minutes on this laptop (extraction about 10, probes about 30), so the 12 trained models took about 9 hours. Under sustained heat or other load the same model can take 1–1.5 hours. Running one seed at a time (`--seeds 42`, then `1`, then `2`) splits the work into three sessions.
 
 **Run** (from the repository root):
 
@@ -332,6 +351,70 @@ python H2/plots.py
 python -m pytest H2/ -q              # 45 passed
 ```
 
+### Step 7. Full run and findings
+
+**The run.** `python H2/run_seed.py --seeds 42 1 2` processed all 12 trained models without a failure: 52 probes each, plus base's 52 from step 3, 676 in all. The logs confirm that each model was read from its own seed's and arm's `best.pt`, and that each checkpoint loaded in the format of its arm. Then:
+
+```bash
+python H2/analyze.py   # results/summary_cells.csv, bootstrap.csv, decisions.csv and RESULTS.md
+python H2/plots.py     # figures/
+```
+
+![Layer profiles](figures/layer_profiles.png)
+
+**Rule (a): supported.** In base TinyBERT, POS peaks at layer 4 (96.13%) and sentiment at layer 6 (73.55); the POS peak is the earlier one in 97% of bootstrap resamples. POS is a plateau rather than a sharp peak: layers 2–4 lie within 0.15 points (95.98, 96.04, 96.13), while sentiment keeps rising to the last layer. After training (descriptive, not part of the rule) the ordering changes:
+- **MRL:** sentiment peaks at layer 4, the same layer as POS, in all three seeds.
+- **The PIC-trained models:** POS peaks earlier, at layer 2, and sentiment at layer 3 or 4.
+
+![Seed-noise checks](figures/seed_noise.png)
+
+**Rule (b): supported.** MIPIC − MRL POS accuracy, with every coordinate:
+
+| Layer | Seed 42 | Seed 1 | Seed 2 | Mean | Verdict |
+|---:|---|---|---|---:|---|
+| 1 | −0.10 [−0.25, +0.04] | +0.17 [+0.03, +0.32] | −0.03 [−0.15, +0.09] | +0.01 | within noise |
+| 2 | −0.40 [−0.57, −0.22] | −0.07 [−0.23, +0.09] | −0.06 [−0.22, +0.11] | −0.18 | within noise |
+| 3 | −0.67 [−0.87, −0.46] | −0.20 [−0.37, −0.04] | −0.14 [−0.30, +0.00] | −0.34 | within noise |
+
+- **The threshold came from the floor.** MRL's seed SD at layers 1–3 is only 0.00–0.11 points, so T = 0.5 throughout.
+- **Layer 3 shows a small loss that the floor absorbs.** The difference is negative in every seed, and two of the three CIs exclude zero. The decision rule treats a loss under 0.5 points, about 125 of 25,094 test words, as negligible.
+- **The loss grows past layer 3, where the rule doesn't look.** MIPIC − MRL is −0.66, −1.19 and −2.24 at layers 4, 5 and 6, with all nine CIs below zero; sentiment drops by 1.59, 2.05 and 2.56 there, again with all nine CIs below zero. MRL+PIC shows the same pattern (POS −0.61, −0.95, −1.78), so PIC causes it, not SIA. For comparison, MRL itself is only 0.13, 0.27 and 0.65 points below base at layers 4, 5 and 6.
+
+**Falsification check: met, so the hypothesis is falsified by the rules.** MRL+PIC − MRL at layers 1–3, every coordinate, stays inside T for both tasks. The largest differences:
+- POS at layer 3: −0.40, below zero in every seed, but under T.
+- Sentiment at layer 2: −0.68, above T, but every CI crosses zero.
+
+The decision rules count this as "MRL+PIC and MRL give the same profiles". It means (b) is weaker evidence than it looks: MIPIC can't lose much POS information at layers 1–3 when PIC hardly changes those layers at all.
+
+![Checkpoints](figures/checkpoints.png)
+
+**Rule (c): supported at 1 of 3 checkpoints.**
+- **POS part: holds everywhere, but says nothing about PIC.** MIPIC's POS(suffix) exceeds POS(prefix) by 23–40 points at every checkpoint in every seed. The same holds for base and MRL, because the suffix has 704–752 coordinates and the prefix 16–64.
+- **Sentiment part: holds only at (2,32).**
+
+  | Checkpoint | Seed 42 | Seed 1 | Seed 2 | Verdict |
+  |---|---|---|---|---|
+  | (1,16) | +13.53 [+11.58, +15.58] | −0.31 [−1.76, +1.35] | +5.07 [+3.16, +7.02] | fails (seed 1) |
+  | (2,32) | +5.92 [+4.05, +7.82] | +4.56 [+2.77, +6.32] | +4.62 [+2.80, +6.42] | holds |
+  | (3,64) | −0.58 [−1.84, +0.69] | +0.12 [−1.07, +1.34] | +0.31 [−1.00, +1.51] | fails (all seeds) |
+
+  At (1,16) the gain is large in two seeds and absent in the third. h11 found the same instability at this cell, with a gain of 4.7 to 20.4 points depending on the seed, measured there with a different probe.
+- **The prefix pays in POS.** At (3,64), MIPIC's prefix holds 5.16 points less POS than MRL's (−3.55 to −6.24, every CI below zero), and gains no sentiment in return. At (2,32) it holds 1.17 points less on average, but not consistently: two seeds are below MRL (−2.64 and −1.53) and seed 42 is above it (+0.65), each CI excluding zero. At (1,16) MIPIC's prefix holds slightly more POS than MRL's (+1.84 on average), so PIC doesn't simply clear POS out of the prefix.
+
+**MRL+SIA** (not part of the rules) behaves like MRL at layers 1–3 and loses less than the PIC models later (POS at layer 6: 94.43 against MRL's 94.97 and MIPIC's 92.72).
+
+**What it means for the paper's claim.**
+- **The motivation holds in this model.** Lower layers carry syntax before higher layers carry the task signal, as PIC's motivation says, though the POS peak is a broad plateau over layers 2–4.
+- **"Preserves low-level features" holds only where PIC barely acts.** It is true for full-width layers 1–3, which PIC barely changes, so the claim is untested there more than confirmed. It is false for layers 4–6, where PIC-trained models lose up to 2.2 points of POS and 2.6 of sentiment.
+- **PIC's real effect is a trade inside the small prefix.** It is concentrated in the coordinates it supervises: more sentiment at (2,32) and, unreliably, at (1,16); less POS at (3,64).
+
+**Caveats.**
+- **Three training seeds.** Seed SDs from three runs are rough; every threshold here ended up at the 0.5-point floor.
+- **Linear probes.** These measure linearly decodable information; a nonlinear probe could find more in any cell.
+- **Unequal block sizes.** Prefix and suffix differ in size (16–64 against 704–752 coordinates), so their raw scores are not a like-for-like comparison of information density.
+- **Not the paper's benchmark.** Sentiment uses the repository's tweet data, not the official TweetEval benchmark (decision 1).
+- **Probe flags.** 27 of 676 probes stopped at 1,000 iterations, all sentiment at layer 1 (full width or suffix), one of the cells in the PIC check. 153 chose a C at the edge of the grid; 52 of those are layer 0 cells, where every C ties or the input is a fixed word embedding.
+
 ## Layout
 
 ```text
@@ -347,7 +430,7 @@ H2/
 ├── test_run_seed.py          # Step 4: tests
 ├── analyze.py                # Step 5: bootstrap, cross-seed aggregation, decision rules
 ├── test_analyze.py           # Step 5: tests
-├── RESULTS.md                # Step 5 output: every table and verdict (generated once trained results exist)
+├── RESULTS.md                # Step 5 output: every table and verdict (generated)
 ├── plots.py                  # Step 6: the three figures
 ├── test_plots.py             # Step 6: tests
 ├── figures/                  # Step 6 output: layer_profiles.png, seed_noise.png, checkpoints.png
