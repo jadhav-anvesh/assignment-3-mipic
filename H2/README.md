@@ -80,13 +80,15 @@ Why this form:
 
 Recorded before any trained-model results, so they can't be fitted to the outcome.
 
-1. **Sentiment data: the repository's tweet files, with a validation split carved from train** (2026-11-06). The official TweetEval benchmark (`cardiffnlp/tweet_eval`) matches the paper's wording and has a real validation split, but it was not chosen:
+1. **Sentiment data: the repository's tweet files, with a validation split carved from train**. The official TweetEval benchmark (`cardiffnlp/tweet_eval`) matches the paper's wording and has a real validation split, but it was not chosen:
    - **Link to h11.** Rule (c) compares MIPIC's and MRL's sentiment prefixes. h11 found that PIC raises sentiment at (1,16) and (2,32) on exactly this data and these checkpoints (Finding 6). Keeping the data fixed means H2 can say whether that gain coexists with intact POS information, instead of comparing results from two datasets.
    - **Known overlap.** h11 already checked it: no test row is in the training corpus, and 3,000 training-corpus rows are in `tweet_train.csv`, which can only help the trained models. TweetEval would need its own overlap check, because all 3,000 rows of the corpus source labelled `TWEET_EVAL_SENT` are in the Kaggle `tweet_train.csv` (h11 `overlap_check.txt`), so the label doesn't say where they came from.
    - **Cost.** Sentiment numbers are not comparable with the paper's. This is true of the whole repository already.
    - Rules (a) and (b) are expected to come out the same on either dataset; only (c) depends on this choice.
-2. **Seed noise: T = max(2σ, 0.5 points), σ from MRL, consistent CIs in all 3 seeds** (2026-11-06). The full rule and its reasons are under "Seed noise: the operational rule" above.
-3. **Trained models: the existing `best.pt` checkpoints for seeds 42, 1 and 2** (2026-11-06), the same ones h11 probed, rather than new training runs. They come from the unmodified `run_experiments.py`, so they are ordinary trained models; reusing them saves about 4.5 GPU hours and keeps the link to h11's results.
+2. **Seed noise: T = max(2σ, 0.5 points), σ from MRL, consistent CIs in all 3 seeds**. The full rule and its reasons are under "Seed noise: the operational rule" above.
+3. **Trained models: the existing `best.pt` checkpoints for seeds 42, 1 and 2**, the same ones h11 probed, rather than new training runs. They come from the unmodified `run_experiments.py`, so they are ordinary trained models; reusing them saves about 4.5 GPU hours and keeps the link to h11's results.
+   - **Location:** `MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed{42,1,2}/checkpoints/{mrl,mrl_pic,mipic,mrl_sia}/best.pt` (not tracked in git). `best.pt` is the epoch chosen during training; `model.pt` beside it is the last epoch and is not used.
+   - **Verified**: all 12 load strictly and differ from base. MIPIC seed 42, re-extracted here, reproduces h11's saved test predictions at (layer 1, 16D) and the pooler at 768D, with 18 and 15 of 3,432 predictions different (54.50 vs 54.65 and 67.72 vs 67.77 macro-F1). The small differences come from CPU vs GPU arithmetic and scikit-learn 1.5.1 vs 1.9.0; the other seeds' MIPIC and seed 42's MRL and MRL+PIC score 10 to 20 points away at (1,16).
 
 **Expected sanity check.** At layer 0, [CLS] is the same vector for every sentence (the [CLS] token embedding plus position 0, then LayerNorm), so sentiment at layer 0 should be at chance. POS at layer 0 is a non-contextual word-embedding probe and should already be high.
 
@@ -95,7 +97,7 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 | Step | What it adds | Status |
 |---|---|---|
 | 1 | UD EWT loader: download, verify, parse; tests | Done |
-| 2 | Feature extraction, layers 0–6: token first-subword vectors (UD EWT) and [CLS] vectors (tweets) | To do |
+| 2 | Feature extraction, layers 0–6: token first-subword vectors (UD EWT) and [CLS] vectors (tweets) | Done |
 | 3 | Probes: layer profiles and prefix/suffix cells, for POS and sentiment | To do |
 | 4 | Launcher scripts: extract → probe → delete features, per model and seed; full run on base | To do |
 | 5 | Paired bootstrap, cross-seed aggregation, decision rules (a), (b), (c) and the falsification checks | To do |
@@ -131,14 +133,49 @@ python H2/ud_data.py                    # download if needed, verify, print the 
 python -m pytest H2/test_ud_data.py -q  # 6 passed (the real-data test is skipped until the download)
 ```
 
+### Step 2. Feature extraction
+
+**Files.** [extract_features.py](extract_features.py), [test_extract_features.py](test_extract_features.py).
+
+**What it does.** For one encoder (base TinyBERT, or a trained checkpoint loaded with `h11_probe/load_encoder.py`), it runs every sentence through the frozen model once and saves, for every layer l = 0…6:
+
+| Part | Rows | Vector saved per row | Labels saved |
+|---|---:|---|---|
+| `ud_train`, `ud_dev`, `ud_test` | one per UD word (204,577 / 25,149 / 25,094) | first subword of the word, `hidden_states[l][:, i, :]` | UPOS id, XPOS id, sentence index |
+| `tweet_train`, `tweet_test` | one per tweet (26,732 / 3,432) | [CLS], `hidden_states[l][:, 0, :]` | sentiment label |
+
+Files go to `H2/features/<name>/` as `{part}_layer{l}.npy` (float32, 768 columns), plus the label arrays and a `meta.json` with the settings, the checkpoint's SHA-256, row counts and timings. Rows are in the original data order.
+
+**Choices and why.**
+- **First subword.** A word split into several subwords (e.g. "unbelievably" → `un`, `##bel`, …) is represented by its first subword, the usual convention for token-level probes. UD words are passed to the tokenizer pre-split (`is_split_into_words=True`), so word boundaries come from UD, not from the tokenizer.
+- **No truncation of UD sentences.** The longest one is 337 tokens, below the model's 512 positions; the script stops rather than truncate if that ever changes. Tweets keep h11's limit of 256 tokens (the longest tweet is 110), so tweet [CLS] vectors are the ones h11 probed.
+- **Words with no subword** (e.g. a lone zero-width space) are dropped together with their labels and counted in `meta.json`. UD EWT r2.13 has none.
+- **Length-sorted batches.** Sentences are grouped by token length, so little padding is computed: 1.8× faster than h11's data-order batching on the same 3,200 tweets (22 vs 12 tweets/s on CPU). Padding is masked in attention, and the tests check that every vector matches encoding its sentence alone (to 1e-4).
+- **Flat memory.** Vectors are copied straight into memory-mapped `.npy` files. This matters on CPU: there, `hidden_states[l][:, 0, :].cpu().numpy()` is a *view* that keeps the whole batch tensor alive, so code that keeps such views (as `h11_probe/extract_cls.py` does) grows by about 50 MB per batch until the machine runs out of memory and torch crashes. It is harmless on a GPU, where `.cpu()` copies.
+- **Resumable.** Each part is written under `*.partial.npy` names and renamed when complete, and `meta.json` lists completed parts. A rerun skips them, so an interruption costs at most the part in progress. A rerun with different settings into the same folder is refused.
+
+**Cost per model** (CPU, 16-thread laptop): about 6.1 GB of features; about 20–35 minutes (tweets 22–40/s, UD 29–50 sentences/s, depending on machine load). The features can be deleted once the model is probed (step 4).
+
+**Run** (from the repository root):
+
+```bash
+python H2/extract_features.py --name base --limit 50     # smoke test, seconds
+python H2/extract_features.py --name base                # full run
+python H2/extract_features.py --name mipic_s42 \
+    --checkpoint MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed42/checkpoints/mipic/best.pt
+python -m pytest H2/ -q                                  # 14 passed, about a minute on CPU
+```
+
 ## Layout
 
 ```text
 H2/
-├── README.md        # This file
-├── ud_data.py       # Step 1: UD EWT download, verification and parsing
-├── test_ud_data.py  # Step 1: tests
-├── data/            # Downloaded UD EWT files (not tracked)
-├── features/        # Extracted features (not tracked; added in step 2)
-└── results/         # Result tables (tracked; added in step 3)
+├── README.md                 # This file
+├── ud_data.py                # Step 1: UD EWT download, verification and parsing
+├── test_ud_data.py           # Step 1: tests
+├── extract_features.py       # Step 2: layer 0-6 UD word and tweet [CLS] features
+├── test_extract_features.py  # Step 2: tests
+├── data/                     # Downloaded UD EWT files (not tracked)
+├── features/<name>/          # Extracted features (not tracked)
+└── results/                  # Result tables (tracked; added in step 3)
 ```
