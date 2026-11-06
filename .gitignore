@@ -30,6 +30,10 @@ checkpoints/
 wandb/
 tensorboard/
 h11_probe/features/
+# H2: downloaded UD EWT files and extracted features stay local; result tables are tracked.
+H2/data/
+H2/features/
+!H2/results/
 # Run folders: only the per-seed result tables are tracked; checkpoints and logs stay local.
 !h11_probe/runs/
 !h11_probe/runs_kl/
