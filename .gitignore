@@ -41,6 +41,12 @@ h11_probe/runs_kl/*/*
 !h11_probe/runs_kl/*/tweeteval_results.csv
 # Small h11_probe result tables (CSV/NPZ/TXT, a few MB) are tracked.
 !h11_probe/results/
+# Published experiment summaries are intentionally tracked.
+!experiments/
+!experiments/sia_pic/
+!experiments/sia_pic/results/
+!experiments/sia_pic/results/*.json
+!experiments/sia_pic/results/*.csv
 
 # Model and optimizer artifacts
 *.ckpt

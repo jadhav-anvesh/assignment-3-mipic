@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "seeds": [1, 2, 42],
+  "models": ["mrl_sia", "mipic"],
+  "attention_kl": true,
+  "datasets": ["tweet", "banking77", "stsb"],
+  "dimensions": [16, 32, 64, 128, 256, 512, 768],
+  "score_rows": 126,
+  "source": "Kaggle completed notebook output",
+  "raw_scores": "not included in repository"
+}
