@@ -28,7 +28,7 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 .
 ├── README.md                     # This file
 ├── HANDOFF.md                    # Start here: summary, results, how to reproduce, next steps
-├── hypothesis.md                 # The paper's testable assumptions, H1 to H20
+├── hypotheses.md                # The five selected hypotheses to test
 ├── MIPIC_TRAINING_README.md      # Record of the original Kaggle training run
 ├── LEXIS_A1.pdf                  # Project report
 │
