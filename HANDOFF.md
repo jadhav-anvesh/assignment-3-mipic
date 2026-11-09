@@ -1,6 +1,6 @@
 # Handoff: MIPIC reproduction and the H11 investigation
 
-This note is for teammates picking up the work. It explains what the repository does, what we added, what we found, how to reproduce it and what is worth doing next. Details live in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md) (the findings log), [h11_probe/CROSS_SEED.md](h11_probe/CROSS_SEED.md) (all cross-seed tables) and [hypothesis.md](hypothesis.md) (the hypotheses H1 to H20).
+This note is for teammates picking up the work. It explains what the repository does, what we added, what we found, how to reproduce it and what is worth doing next. Details live in [h11_probe/FINDINGS.md](h11_probe/FINDINGS.md) (the findings log), [h11_probe/CROSS_SEED.md](h11_probe/CROSS_SEED.md) (all cross-seed tables) and [hypotheses.md](hypotheses.md) (the five hypotheses we test).
 
 ## a. Summary
 
