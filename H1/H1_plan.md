@@ -14,13 +14,12 @@ The paper does not define "coarse" or "fine". The paper does not measure them. I
 
 This plan tests the claim on the sentence embedding only. It does not test token vectors.
 
-## 2. The three parts of H1
+## 2. The two parts of H1
 
 | ID | Statement | Status |
 |---|---|---|
 | H1-a | The prefix `z[0:d]` holds more task information than other sets of d coordinates. | Precondition. MRL causes this by design. |
 | H1-b | The prefix holds coarse information first. Fine information comes later. | Main claim. |
-| H1-c | The block `z[d:2d]` adds fine detail inside each coarse class. It does not add more coarse information. | Refinement claim. |
 
 "Coarse" and "fine" have one meaning in this plan: two levels of the same label hierarchy on the same sentences. Each fine label is a member of one coarse label.
 
@@ -96,7 +95,6 @@ Summary of the metrics:
 | R(d) | Which fraction of the full-width information do the d coordinates keep? | (Building block) |
 | A(d) | Are the first d coordinates better than d random coordinates? | A > 0 (H1-a) |
 | ΔCFI(d) | Does the prefix favour coarse labels more than a random order does? | ΔCFI > 0 (H1-b) |
-| ΔRI(d) | Does the block [d:2d] add fine detail inside each coarse class, more than with a random order? | ΔRI > 0 (H1-c) |
 
 **Retention.**
 R(d) = (S(d) − S_chance) / (S(768) − S_chance)
@@ -117,13 +115,6 @@ CFI > 0 means the d coordinates keep more of the coarse information than of the 
 
 Example: the prefix has CFI = 0.40 and the random orders have a mean CFI = 0.30. Then ΔCFI = 0.10, and the prefix favours coarse information more than chance does. If the prefix is better by the same amount on coarse and fine, ΔCFI = 0. Then the prefix is better, but it is not "coarse first".
 
-**Refinement index (H1-c).**
-W(d) is the within-coarse fine score. To calculate it, fit one fine probe for each coarse class, on the rows of that class only. Then take the mean of the scores, weighted by class size. Normalize W like R.
-RI(d) = [W(2d) − W(d)] − [R_coarse(2d) − R_coarse(d)]
-ΔRI(d) = RI_prefix(d) − mean of RI_random(d)
-
-W asks: if the coarse class is known, can the d coordinates find the fine class? For example, inside TREC `LOC`, can they separate `city` from `country`? RI compares two gains when the width goes from d to 2d: the gain in W and the gain in coarse retention. RI > 0 means the new block [d:2d] helps fine-within-coarse more than coarse. That is "refinement". ΔRI removes the part that a random order also gives.
-
 **Uncertainty.**
 - Use a paired bootstrap over test rows: 1,000 resamples, seed 0. Each resample takes the test rows at random, with replacement, and calculates all metrics again. The middle 95% of the 1,000 values is the 95% CI.
 - Use the same resampled rows for all orders and models. Thus a difficult resample affects all orders and models in the same way, and the differences between them are fair.
@@ -138,7 +129,6 @@ Fix these rules before you look at results. Apply them to the `pooler_output` re
 | H1-a | z(d) > 2 for MIPIC, with z(d) = A(d) / SD of the 10 random scores. Base has z(d) ≤ 2. | z(d) ≤ 2 for MIPIC, or z(d) > 2 for base. |
 | H1-b | ΔCFI(d) > 0 for MIPIC, and the 95% CI does not include 0. | The CI of ΔCFI includes 0, or ΔCFI < 0. |
 | H1-b, caused by MIPIC | ΔCFI(MIPIC) − ΔCFI(MRL) > 0, with a paired CI that does not include 0. | The difference has a CI that includes 0. Then the order comes from MRL, not from SIA or PIC. |
-| H1-c | ΔRI(d) > 0 for MIPIC, and the 95% CI does not include 0. | The CI of ΔRI includes 0, or ΔRI < 0. |
 
 Note on the H1-a rule (changed 2026-11-07): the first rule was "above the 95th percentile of the random sets". With 10 random sets, the highest possible result is "above all 10", which is about the 91st percentile. Thus that rule could not pass. "z > 2" (more than 2 SD above the random mean) is the nearest equivalent of the 95% level. We made this change because of the number of random sets, not because of the results. The result of H1-a is the same with both rules.
 
@@ -156,7 +146,7 @@ Interpretation:
 5. Select C for each model and label level.
 6. Fit the probes for each order and width. Save the test predictions.
 7. Run the kNN check.
-8. Calculate R, A, CFI, ΔCFI, W, RI and ΔRI.
+8. Calculate R, A, CFI and ΔCFI.
 9. Run the paired bootstrap.
 10. Apply the decision rules in section 8.
 11. Write the results in `H1_results.md`.
@@ -165,7 +155,7 @@ Interpretation:
 
 - One table for each metric: model × width × dataset × seed.
 - One plot for each dataset: R(d) for coarse and fine, prefix against the random band, one panel for each model.
-- `H1_results.md` with the verdict for H1-a, H1-b and H1-c, and all CIs.
+- `H1_results.md` with the verdict for H1-a and H1-b, and all CIs.
 
 ## 11. Limits
 
