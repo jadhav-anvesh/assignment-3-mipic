@@ -7,7 +7,7 @@ The notebook `MIPIC_Kaggle_FINAL.ipynb` runs these steps in order. Run every com
 Attach the repository and the dataset containing `final_data.csv`, enable a GPU, then install the extra dependencies (Kaggle's CUDA build of PyTorch is kept):
 
 ```bash
-pip install -q -r requirements-kaggle.txt
+pip install -q -r requirements.txt
 python -m pytest -q
 ```
 

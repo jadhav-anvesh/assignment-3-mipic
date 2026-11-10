@@ -3,9 +3,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_kaggle_dependencies_do_not_reinstall_torch() -> None:
-    text = (ROOT / "requirements-kaggle.txt").read_text(encoding="utf-8")
-    assert "torch" not in {line.strip().split("#", 1)[0].strip() for line in text.splitlines() if line.strip()}
+def test_canonical_requirements_file_is_used() -> None:
+    text = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    assert "torch>=2.0.0" in text
+    assert not (ROOT / "requirements-kaggle.txt").exists()
+    assert not (ROOT / "requirements-lock.txt").exists()
 
 
 def test_kaggle_run_instructions_are_available() -> None:

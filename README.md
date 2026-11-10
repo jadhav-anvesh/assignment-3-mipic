@@ -27,9 +27,6 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 ```text
 .
 ├── README.md                     # This file
-├── HANDOFF.md                    # Start here: summary, results, how to reproduce, next steps
-├── hypotheses.md                # The five selected hypotheses to test
-├── MIPIC_TRAINING_README.md      # Record of the original Kaggle training run
 │
 ├── data/                         # Training corpus and tweet sentiment probe splits
 ├── models/                       # TinyBERT wrappers: MRL, MRL+SIA, MRL+PIC, MIPIC
@@ -47,11 +44,8 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 ├── kaggle/
 │   ├── README.md                 # Kaggle (2x T4) setup and run instructions
 │   └── kaggle_bootstrap.py
-├── MIPIC_Kaggle_FINAL.ipynb      # Kaggle execution notebook
-├── mipic.ipynb                   # Reference notebook used by tests/test_mrl_baseline_integration.py
-├── mipic-a1-lexis.ipynb          # Notebook of the original Kaggle run (evidence for Finding 5)
 │
-├── layerwise_probe/              # Probing experiments (see HANDOFF.md, section g, for every file)
+├── layerwise_probe/              # Probing experiments
 │   ├── FINDINGS.md               # Findings 1 to 9 with numbers, CIs and caveats
 │   ├── CROSS_SEED.md             # Cross-seed tables (seeds 42, 1, 2)
 │   ├── train_all.ps1 / .sh       # Train the four arms for one seed (attention KL pinned off)
@@ -72,25 +66,17 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 │   ├── runs/seed{42,1,2}/        # KL-off runs: result tables tracked, checkpoints and logs local
 │   └── runs_kl/seed42/           # KL-on runs of MRL+SIA and MIPIC
 │
-├── requirements.txt              # Local environment
-├── requirements-kaggle.txt       # Kaggle environment
-└── requirements-lock.txt         # Exact versions used for the layerwise_probe runs
+└── requirements.txt              # Canonical dependencies for all environments
 ```
 
 **Attention KL.** `MIPIC_ATTENTION_KL` switches the SIA attention-KL term (Eq. 6) on or off. It is on by default, as in the paper. The `layerwise_probe` runs were made with it off, so `layerwise_probe/train_all.*` set `MIPIC_ATTENTION_KL=0`; pass `-AttentionKL` / `--attention-kl` to train the SIA arms with it on.
 
 ## Requirements
 
-For a local environment:
+Install the canonical dependencies in any environment:
 
 ```bash
 pip install -r requirements.txt
-```
-
-For Kaggle, use:
-
-```bash
-pip install -r requirements-kaggle.txt
 ```
 
 The backbone is downloaded from Hugging Face on first use:
