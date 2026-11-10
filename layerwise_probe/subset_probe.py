@@ -14,7 +14,7 @@ For the pooler row and layers 1-6 at widths 16, 32, 64, 128 it compares:
 Probe settings are those of probe_grid.py (and so of evaluate.py).
 
 Example, from the repository root:
-    python h11_probe/subset_probe.py --name base
+    python layerwise_probe/subset_probe.py --name base
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from joblib import Parallel, delayed  # noqa: E402
 
-from h11_probe.probe_grid import ROWS, fit_one, load_features, prediction_key  # noqa: E402
+from layerwise_probe.probe_grid import ROWS, fit_one, load_features, prediction_key  # noqa: E402
 
 SUBSET_DIMS = (16, 32, 64, 128)
 HIDDEN = 768
@@ -129,8 +129,8 @@ def check_prefix_against_grid(
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Compare the prefix with other coordinate subsets (H1/H2).")
     parser.add_argument("--name", required=True, help="Feature folder name, e.g. base, mrl, mrl_pic, mipic.")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "h11_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     parser.add_argument("--n-random", type=int, default=5)
     parser.add_argument("--n-jobs", type=int, default=-1)
     args = parser.parse_args(argv)

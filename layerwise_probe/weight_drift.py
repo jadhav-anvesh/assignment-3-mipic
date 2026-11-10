@@ -11,10 +11,10 @@ parameters except the pooler ("encoder"), and everything ("all"). Biases that
 are exactly zero in base (the pooler bias) count in the norms like any other
 tensor; the relative change of the pooler is dominated by its weight.
 
-Outputs h11_probe/results/weight_drift_{tag}.csv.
+Outputs layerwise_probe/results/weight_drift_{tag}.csv.
 
 Example, from the repository root:
-    python h11_probe/weight_drift.py
+    python layerwise_probe/weight_drift.py
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ if str(REPO_ROOT) not in sys.path:
 import pandas as pd  # noqa: E402
 import torch  # noqa: E402
 
-from h11_probe.load_encoder import load_encoder  # noqa: E402
+from layerwise_probe.load_encoder import load_encoder  # noqa: E402
 
 MODELS = ("mrl", "mrl_pic", "mipic", "mrl_sia")
 
@@ -64,11 +64,11 @@ def drift(base: dict, trained: dict, names: List[str]) -> dict:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Relative parameter change of trained encoders from base.")
-    parser.add_argument("--runs-dir", type=Path, default=REPO_ROOT / "h11_probe" / "runs" / "seed42" / "checkpoints")
+    parser.add_argument("--runs-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "runs" / "seed42" / "checkpoints")
     parser.add_argument("--models", nargs="+", default=list(MODELS))
     parser.add_argument("--checkpoint-name", default="best.pt")
     parser.add_argument("--tag", default="s42")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     args = parser.parse_args(argv)
 
     base_model, _ = load_encoder(None, device="cpu")

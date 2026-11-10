@@ -298,7 +298,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--threads", type=int, default=None, help="torch CPU threads (default: torch's choice).")
     args = parser.parse_args(argv)
 
-    from h11_probe.load_encoder import load_encoder  # read-only reuse of the h11 loader
+    from layerwise_probe.load_encoder import load_encoder  # read-only reuse of the h11 loader
 
     if args.threads:
         torch.set_num_threads(args.threads)

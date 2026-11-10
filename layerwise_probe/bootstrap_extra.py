@@ -19,7 +19,7 @@ and the same macro-F1 (bootstrap.macro_f1_rows).
 F1 values are in points (x100).
 
 Example, from the repository root:
-    python h11_probe/bootstrap_extra.py
+    python layerwise_probe/bootstrap_extra.py
 """
 
 from __future__ import annotations
@@ -36,8 +36,8 @@ if str(REPO_ROOT) not in sys.path:
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from h11_probe import bootstrap  # noqa: E402
-from h11_probe.probe_grid import DIMS, ROWS, prediction_key  # noqa: E402
+from layerwise_probe import bootstrap  # noqa: E402
+from layerwise_probe.probe_grid import DIMS, ROWS, prediction_key  # noqa: E402
 
 # Signs of each arm in the interaction contrast.
 INTERACTION = (("mipic", 1), ("mrl_sia", -1), ("mrl_pic", -1), ("mrl", 1))
@@ -101,7 +101,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="KL-on pairwise bootstraps and the SIA x PIC interaction bootstrap.")
     parser.add_argument("--suffix", default="_s42", help="Seed suffix of the trained models' preds names.")
     parser.add_argument("--base", default="base", help="Preds name of the untrained backbone.")
-    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     parser.add_argument("--n-resamples", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--skip-pairwise", action="store_true",

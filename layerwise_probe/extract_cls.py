@@ -7,8 +7,8 @@ embedding output, so layer L is hidden_states[L]. It also saves pooler_output,
 the vector evaluate.py probes, as {split}_pooler.npy.
 
 Example, from the repository root:
-    python h11_probe/extract_cls.py --name base --limit 200
-    python h11_probe/extract_cls.py --name mipic --checkpoint "results/checkpoints/mipic/best.pt"
+    python layerwise_probe/extract_cls.py --name base --limit 200
+    python layerwise_probe/extract_cls.py --name mipic --checkpoint "results/checkpoints/mipic/best.pt"
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ import torch  # noqa: E402
 from torch.utils.data import DataLoader  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
-from h11_probe.load_encoder import load_encoder  # noqa: E402
+from layerwise_probe.load_encoder import load_encoder  # noqa: E402
 
 LAYERS = (1, 2, 3, 4, 5, 6)
 FEATURE_KEYS: Tuple[Union[int, str], ...] = LAYERS + ("pooler",)
@@ -98,7 +98,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Extract per-layer [CLS] features for H11.")
     parser.add_argument("--checkpoint", type=Path, default=None, help="Omit for base TinyBERT.")
     parser.add_argument("--name", required=True, help="Feature folder name, e.g. base, mrl, mrl_pic, mipic.")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-length", type=int, default=256)
     parser.add_argument("--limit", type=int, default=None, help="Use only the first N rows of each split.")

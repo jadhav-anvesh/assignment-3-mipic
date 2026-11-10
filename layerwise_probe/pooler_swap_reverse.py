@@ -10,12 +10,12 @@ For comparison each row also reports the model's own pooler features (trained
 pooler on trained h6, recomputed from the checkpoint and checked against the
 stored *_pooler.npy) and base's. Probe: probe_grid.fit_one, the default probe.
 
-Outputs h11_probe/results/pooler_swap_reverse_{tag}.csv with one row per
+Outputs layerwise_probe/results/pooler_swap_reverse_{tag}.csv with one row per
 (model, readout, dim): readout is "own" (trained W, trained h6), "base_pooler"
 (base W, trained h6) or "base" (base W, base h6).
 
 Example, from the repository root:
-    python h11_probe/pooler_swap_reverse.py --tag s42
+    python layerwise_probe/pooler_swap_reverse.py --tag s42
 """
 
 from __future__ import annotations
@@ -33,9 +33,9 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from joblib import Parallel, delayed  # noqa: E402
 
-from h11_probe.load_encoder import load_encoder  # noqa: E402
-from h11_probe.pooler_swap import MODELS, pool  # noqa: E402
-from h11_probe.probe_grid import fit_one  # noqa: E402
+from layerwise_probe.load_encoder import load_encoder  # noqa: E402
+from layerwise_probe.pooler_swap import MODELS, pool  # noqa: E402
+from layerwise_probe.probe_grid import fit_one  # noqa: E402
 
 
 def load_h6(folder: Path):
@@ -48,14 +48,14 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Probe trained layer 6 features through base's pooler.")
     parser.add_argument("--tag", required=True, help="Seed tag, e.g. s42, s1, s2.")
     parser.add_argument("--runs-dir", type=Path, default=None,
-                        help="Checkpoint folder; default h11_probe/runs/seed<N>/checkpoints from --tag.")
+                        help="Checkpoint folder; default layerwise_probe/runs/seed<N>/checkpoints from --tag.")
     parser.add_argument("--models", nargs="+", default=list(MODELS))
     parser.add_argument("--dims", nargs="+", type=int, default=[16, 64, 768])
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "h11_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     args = parser.parse_args(argv)
 
-    runs_dir = args.runs_dir or REPO_ROOT / "h11_probe" / "runs" / f"seed{args.tag.lstrip('s')}" / "checkpoints"
+    runs_dir = args.runs_dir or REPO_ROOT / "layerwise_probe" / "runs" / f"seed{args.tag.lstrip('s')}" / "checkpoints"
     base_encoder, _ = load_encoder(None, device="cpu")
     bh_tr, bh_te, y_tr, y_te = load_h6(args.features_dir / "base")
     base_te = pool(base_encoder, bh_te)

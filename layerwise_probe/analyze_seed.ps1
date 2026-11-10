@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    Run the h11_probe analysis pipeline on every finished model of one seed.
+    Run the layerwise_probe analysis pipeline on every finished model of one seed.
 
 .DESCRIPTION
     Models are discovered from {RunsDir}/seed{Seed}/checkpoints/<model>/best.pt,
-    so this works for h11_probe/runs (mrl, mrl_pic, mipic, mrl_sia) and
-    h11_probe/runs_kl (mrl_sia_kl, mipic_kl) alike. A model is analysed only if
+    so this works for layerwise_probe/runs (mrl, mrl_pic, mipic, mrl_sia) and
+    layerwise_probe/runs_kl (mrl_sia_kl, mipic_kl) alike. A model is analysed only if
     its training finished cleanly: best.pt exists AND its entry is in
     tweeteval_results.json. That keeps a model that is still training (best.pt
     is written after epoch 1) out of the analysis.
@@ -19,12 +19,12 @@
       4. subset_probe.py  --name N --n-random 20
 
     A step is skipped when its output already exists, so reruns are safe:
-      1. h11_probe/features/N/meta.json (written last by extract_cls.py), or
+      1. layerwise_probe/features/N/meta.json (written last by extract_cls.py), or
          steps 2 and 4 are both done (the features are no longer needed)
-      2. h11_probe/results/N_grid.csv and N_preds.npz
-      3. h11_probe/results/N_sts_clean.csv
-     3b. h11_probe/results/N_sts.csv
-      4. h11_probe/results/N_subsets.csv and N_subsets_summary.csv
+      2. layerwise_probe/results/N_grid.csv and N_preds.npz
+      3. layerwise_probe/results/N_sts_clean.csv
+     3b. layerwise_probe/results/N_sts.csv
+      4. layerwise_probe/results/N_subsets.csv and N_subsets_summary.csv
     Steps 2 and 4 need the features, and step 4 also needs step 2's grid, so a
     failure upstream blocks them. Steps 3 and 3b read the checkpoint and always run.
 
@@ -34,26 +34,26 @@
     Seed folder to analyse. Default 42.
 
 .PARAMETER RunsDir
-    Folder holding seed<N>/. Default h11_probe/runs. Relative paths are resolved
+    Folder holding seed<N>/. Default layerwise_probe/runs. Relative paths are resolved
     against the repository root.
 
 .PARAMETER DryRun
     Print what would run or be skipped for each model, without running anything.
 
 .PARAMETER DeleteFeatures
-    After step 4 is done, delete h11_probe/features/N/. Results and prediction
-    files (in h11_probe/results/) are kept.
+    After step 4 is done, delete layerwise_probe/features/N/. Results and prediction
+    files (in layerwise_probe/results/) are kept.
 
 .PARAMETER Python
     Python executable. Default: "python" from PATH.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File h11_probe\analyze_seed.ps1 -Seed 42
-    powershell -ExecutionPolicy Bypass -File h11_probe\analyze_seed.ps1 -Seed 42 -RunsDir h11_probe\runs_kl -DeleteFeatures
+    powershell -ExecutionPolicy Bypass -File layerwise_probe\analyze_seed.ps1 -Seed 42
+    powershell -ExecutionPolicy Bypass -File layerwise_probe\analyze_seed.ps1 -Seed 42 -RunsDir layerwise_probe\runs_kl -DeleteFeatures
 #>
 param(
     [int]$Seed = 42,
-    [string]$RunsDir = "h11_probe/runs",
+    [string]$RunsDir = "layerwise_probe/runs",
     [switch]$DryRun,
     [switch]$DeleteFeatures,
     [string]$Python = "python"
@@ -68,8 +68,8 @@ $SeedDir = Join-Path $RunsDir "seed$Seed"
 $CkptRoot = Join-Path $SeedDir "checkpoints"
 $LogDir = Join-Path $SeedDir "logs"
 $ResultsJson = Join-Path $SeedDir "tweeteval_results.json"
-$FeaturesRoot = Join-Path $RepoRoot "h11_probe\features"
-$ResultsRoot = Join-Path $RepoRoot "h11_probe\results"
+$FeaturesRoot = Join-Path $RepoRoot "layerwise_probe\features"
+$ResultsRoot = Join-Path $RepoRoot "layerwise_probe\results"
 $PythonExe = (Get-Command $Python -ErrorAction Stop).Source
 
 function Write-Utf8Line([string]$Path, [string]$Text) {
@@ -149,11 +149,11 @@ try {
             "4"  = @((Join-Path $ResultsRoot "${name}_subsets.csv"), (Join-Path $ResultsRoot "${name}_subsets_summary.csv"))
         }
         $steps = @(
-            @{ N = "1"; Label = "1 extract_cls"; Args = "h11_probe\extract_cls.py --name $name --checkpoint `"$ckpt`"" },
-            @{ N = "2"; Label = "2 probe_grid"; Args = "h11_probe\probe_grid.py --name $name --check-readme" },
-            @{ N = "3"; Label = "3 sts_eval (clean)"; Args = "h11_probe\sts_eval.py --name $name --checkpoint `"$ckpt`" --drop-overlap" },
-            @{ N = "3b"; Label = "3b sts_eval (all pairs)"; Args = "h11_probe\sts_eval.py --name $name --checkpoint `"$ckpt`"" },
-            @{ N = "4"; Label = "4 subset_probe"; Args = "h11_probe\subset_probe.py --name $name --n-random 20" }
+            @{ N = "1"; Label = "1 extract_cls"; Args = "layerwise_probe\extract_cls.py --name $name --checkpoint `"$ckpt`"" },
+            @{ N = "2"; Label = "2 probe_grid"; Args = "layerwise_probe\probe_grid.py --name $name --check-readme" },
+            @{ N = "3"; Label = "3 sts_eval (clean)"; Args = "layerwise_probe\sts_eval.py --name $name --checkpoint `"$ckpt`" --drop-overlap" },
+            @{ N = "3b"; Label = "3b sts_eval (all pairs)"; Args = "layerwise_probe\sts_eval.py --name $name --checkpoint `"$ckpt`"" },
+            @{ N = "4"; Label = "4 subset_probe"; Args = "layerwise_probe\subset_probe.py --name $name --n-random 20" }
         )
         $done = @{}
         foreach ($n in $out.Keys) { $done[$n] = Test-AllExist $out[$n] }

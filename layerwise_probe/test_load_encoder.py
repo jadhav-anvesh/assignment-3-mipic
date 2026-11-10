@@ -1,6 +1,6 @@
 """Checks that load_encoder recovers the exact encoder weights from every checkpoint format.
 
-Run from the repository root:  python -m pytest h11_probe/test_load_encoder.py -q
+Run from the repository root:  python -m pytest layerwise_probe/test_load_encoder.py -q
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from h11_probe.load_encoder import load_encoder  # noqa: E402
+from layerwise_probe.load_encoder import load_encoder  # noqa: E402
 
 
 @pytest.fixture(scope="module")

@@ -29,22 +29,22 @@ runs/
 checkpoints/
 wandb/
 tensorboard/
-h11_probe/features/
+layerwise_probe/features/
 # H2: downloaded UD EWT files and extracted features stay local; result tables are tracked.
 H2/data/
 H2/features/
 !H2/results/
 # Run folders: only the per-seed result tables are tracked; checkpoints and logs stay local.
-!h11_probe/runs/
-!h11_probe/runs_kl/
-h11_probe/runs/*/*
-h11_probe/runs_kl/*/*
-!h11_probe/runs/*/tweeteval_results.json
-!h11_probe/runs/*/tweeteval_results.csv
-!h11_probe/runs_kl/*/tweeteval_results.json
-!h11_probe/runs_kl/*/tweeteval_results.csv
-# Small h11_probe result tables (CSV/NPZ/TXT, a few MB) are tracked.
-!h11_probe/results/
+!layerwise_probe/runs/
+!layerwise_probe/runs_kl/
+layerwise_probe/runs/*/*
+layerwise_probe/runs_kl/*/*
+!layerwise_probe/runs/*/tweeteval_results.json
+!layerwise_probe/runs/*/tweeteval_results.csv
+!layerwise_probe/runs_kl/*/tweeteval_results.json
+!layerwise_probe/runs_kl/*/tweeteval_results.csv
+# Small layerwise_probe result tables (CSV/NPZ/TXT, a few MB) are tracked.
+!layerwise_probe/results/
 # Published experiment summaries are intentionally tracked.
 !experiments/
 !experiments/sia_pic/

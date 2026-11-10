@@ -10,8 +10,8 @@ The pooler row is the vector evaluate.py probes, so --check-readme can compare i
 against the README table stored in expected_readme.json.
 
 Example, from the repository root:
-    python h11_probe/probe_grid.py --name base
-    python h11_probe/probe_grid.py --name mipic --check-readme
+    python layerwise_probe/probe_grid.py --name base
+    python layerwise_probe/probe_grid.py --name mipic --check-readme
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ LAYERS = (1, 2, 3, 4, 5, 6)
 ROWS: Tuple[Union[int, str], ...] = LAYERS + ("pooler",)
 DIMS = (16, 32, 64, 128, 256, 512, 768)
 PIC_CHECKPOINTS = {(1, 16), (2, 32), (3, 64), (4, 256), (5, 512), (6, 768)}
-EXPECTED_README = REPO_ROOT / "h11_probe" / "expected_readme.json"
+EXPECTED_README = REPO_ROOT / "layerwise_probe" / "expected_readme.json"
 README_TOLERANCE = 1.0
 
 # Same values as evaluate.evaluate_tweeteval (random_state is hardcoded to 42
@@ -134,8 +134,8 @@ def check_readme(name: str, grid: pd.DataFrame) -> None:
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Probe every (layer, width) [CLS] prefix for H11.")
     parser.add_argument("--name", required=True, help="Feature folder name, e.g. base, mrl, mrl_pic, mipic.")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "h11_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     parser.add_argument("--limit", type=int, default=None, help="Use only the first N rows of each split.")
     parser.add_argument("--n-jobs", type=int, default=-1)
     parser.add_argument("--check-readme", action="store_true",

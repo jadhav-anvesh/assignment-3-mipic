@@ -8,14 +8,14 @@ drawn without replacement from default_rng(--seed + rep) after a per-size
 offset, so every model is fitted on exactly the same rows. Test rows are
 always the full test split.
 
-Outputs, in h11_probe/results/:
+Outputs, in layerwise_probe/results/:
     probe_size_{tag}.csv           one row per (model, size, rep, dim)
     probe_size_{tag}_summary.csv   per (model, size, dim): mean and SD of F1
                                    over reps, and the paired difference to
                                    --reference (mean, min, max over reps)
 
 Example, from the repository root:
-    python h11_probe/probe_size.py --models base mrl_s42 mrl_pic_s42 mipic_s42 mrl_sia_s42
+    python layerwise_probe/probe_size.py --models base mrl_s42 mrl_pic_s42 mipic_s42 mrl_sia_s42
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from joblib import Parallel, delayed  # noqa: E402
 
-from h11_probe.probe_grid import fit_one  # noqa: E402
+from layerwise_probe.probe_grid import fit_one  # noqa: E402
 
 
 def subset_indices(n_train: int, size: int, rep: int, seed: int) -> np.ndarray:
@@ -63,8 +63,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--dims", nargs="+", type=int, default=[16, 64, 768])
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--tag", default="s42")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "h11_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     parser.add_argument("--n-jobs", type=int, default=-1)
     args = parser.parse_args(argv)
 

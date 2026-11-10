@@ -1,6 +1,6 @@
 """Train mrl_sia or mipic with the SIA attention-KL term switched ON.
 
-The code used for the h11_probe runs hardcoded ``use_attention_kl=False`` in
+The code used for the layerwise_probe runs hardcoded ``use_attention_kl=False`` in
 models/mrl_sia.py and models/mrl_sia_pic.py (now the MIPIC_ATTENTION_KL switch,
 default on; this wrapper forces KL on whatever the switch says), while the README's Kaggle run
 (code version MIPIC_FINAL_V20) logged a nonzero ``sia_attn_loss``. This wrapper
@@ -21,8 +21,8 @@ Guard: if ``sia_attn_loss`` is exactly 0 on every one of the first 50 training
 steps, training stops with an error, because that means KL did not turn on.
 
 Examples, from the repository root:
-    python h11_probe/train_kl_on.py --model mrl_sia --seed 42 --output-dir h11_probe/runs_kl/seed42
-    python h11_probe/train_kl_on.py --model mipic --seed 42 --output-dir h11_probe/runs_kl/seed42 --dry-run
+    python layerwise_probe/train_kl_on.py --model mrl_sia --seed 42 --output-dir layerwise_probe/runs_kl/seed42
+    python layerwise_probe/train_kl_on.py --model mipic --seed 42 --output-dir layerwise_probe/runs_kl/seed42 --dry-run
 """
 
 from __future__ import annotations
@@ -173,7 +173,7 @@ def refuse_kl_off_folder(output_dir: Path) -> None:
     clash = [name for name in existing.get("evaluations", {}) if name.split("_last_epoch")[0] in KL_OFF_NAMES]
     if clash:
         raise SystemExit(f"{results_path} already holds KL-off results ({', '.join(clash)}). "
-                         "Use a separate --output-dir, e.g. h11_probe/runs_kl/seed<N>.")
+                         "Use a separate --output-dir, e.g. layerwise_probe/runs_kl/seed<N>.")
 
 
 def dry_run(model: str) -> None:

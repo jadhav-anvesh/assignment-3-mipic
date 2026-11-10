@@ -7,16 +7,16 @@ shared by every (layer, width) cell, so all cells are judged on identical
 resamples.
 
 Inputs are the prediction files written by probe_grid.py:
-    h11_probe/results/{a}_preds.npz and {b}_preds.npz
+    layerwise_probe/results/{a}_preds.npz and {b}_preds.npz
 with keys L{layer}_d{dim}, P_d{dim} (pooler_output) and labels.
 
-Output: h11_probe/results/bootstrap_{a}_vs_{b}.csv with, per cell, macro-F1 of
+Output: layerwise_probe/results/bootstrap_{a}_vs_{b}.csv with, per cell, macro-F1 of
 a and b, the observed difference a minus b, the 95% percentile interval of the
 resampled differences, and whether that interval excludes zero. F1 values are
 in points (x100).
 
 Example, from the repository root:
-    python h11_probe/bootstrap.py --a mipic_s42 --b mrl_s42
+    python layerwise_probe/bootstrap.py --a mipic_s42 --b mrl_s42
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ if str(REPO_ROOT) not in sys.path:
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from h11_probe.probe_grid import DIMS, ROWS, prediction_key  # noqa: E402
+from layerwise_probe.probe_grid import DIMS, ROWS, prediction_key  # noqa: E402
 
 
 def macro_f1_rows(y_true: np.ndarray, y_pred: np.ndarray, classes: np.ndarray) -> np.ndarray:
@@ -66,7 +66,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Paired bootstrap of macro-F1(a) - macro-F1(b) per (layer, width).")
     parser.add_argument("--a", required=True, help="First model's preds name, e.g. mipic_s42.")
     parser.add_argument("--b", required=True, help="Second model's preds name, e.g. mrl_s42 or base.")
-    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     parser.add_argument("--n-resamples", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args(argv)

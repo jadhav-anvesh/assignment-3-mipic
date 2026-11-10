@@ -52,7 +52,7 @@ def test_first_subword_positions():
 
 @pytest.fixture(scope="module")
 def model():
-    from h11_probe.load_encoder import load_encoder
+    from layerwise_probe.load_encoder import load_encoder
     return load_encoder(None, device="cpu")
 
 

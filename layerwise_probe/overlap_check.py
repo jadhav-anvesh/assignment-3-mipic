@@ -7,10 +7,10 @@ sources and against the TWEET_EVAL_SENT source alone. Two match levels:
     exact        identical strings
     normalised   lower-cased, whitespace collapsed, stripped
 
-Writes h11_probe/results/overlap_check.txt.
+Writes layerwise_probe/results/overlap_check.txt.
 
 Example, from the repository root:
-    python h11_probe/overlap_check.py
+    python layerwise_probe/overlap_check.py
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def main() -> None:
         lines.append(f"  TWEET_EVAL_SENT rows found in {split}: {int(found.sum())} of {len(tweet_src)}")
     text = "\n".join(lines)
     print(text)
-    out = REPO_ROOT / "h11_probe" / "results" / "overlap_check.txt"
+    out = REPO_ROOT / "layerwise_probe" / "results" / "overlap_check.txt"
     out.write_text(text + "\n", encoding="utf-8")
     print(f"Saved {out}")
 

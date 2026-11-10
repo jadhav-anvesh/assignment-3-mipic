@@ -12,10 +12,10 @@ pooler_output coordinates. No classifier is fitted. Metrics:
 
 Vote ties are broken by the summed similarity of the tied classes' neighbours.
 
-Outputs h11_probe/results/probe_knn_{tag}.csv (model, metric, k, dim, f1, accuracy).
+Outputs layerwise_probe/results/probe_knn_{tag}.csv (model, metric, k, dim, f1, accuracy).
 
 Example, from the repository root:
-    python h11_probe/probe_knn.py --models base mrl_s42 mrl_pic_s42 mipic_s42 mrl_sia_s42
+    python layerwise_probe/probe_knn.py --models base mrl_s42 mrl_pic_s42 mipic_s42 mrl_sia_s42
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ if str(REPO_ROOT) not in sys.path:
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from h11_probe.probe_size import load_pooler  # noqa: E402
+from layerwise_probe.probe_size import load_pooler  # noqa: E402
 
 METRICS = ("cosine", "l2norm_euc", "raw_euc")
 CHUNK = 256
@@ -91,8 +91,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--ks", nargs="+", type=int, default=[10, 50])
     parser.add_argument("--dims", nargs="+", type=int, default=[16, 64, 768])
     parser.add_argument("--tag", default="s42")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "h11_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "h11_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
     args = parser.parse_args(argv)
 
     rows = []

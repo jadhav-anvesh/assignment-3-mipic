@@ -5,10 +5,10 @@
 .DESCRIPTION
     Runs the unmodified run_experiments.py once per arm on a single GPU, with the
     Kaggle-matching defaults (5 epochs, lr 2e-5, max length 256, batch 16).
-    Output goes to h11_probe/runs/seed<Seed>/.
+    Output goes to layerwise_probe/runs/seed<Seed>/.
 
     The SIA attention-KL term (Eq. 6) is pinned OFF with MIPIC_ATTENTION_KL=0,
-    the configuration of every run under h11_probe/runs/. The repository default
+    the configuration of every run under layerwise_probe/runs/. The repository default
     is ON (as in the paper), so the pin keeps those runs reproducible. Use
     -AttentionKL for the KL-on configuration.
 
@@ -29,13 +29,13 @@
 .PARAMETER AttentionKL
     Train with attention KL ON (MIPIC_ATTENTION_KL=1). Only the arms that have
     SIA (mipic, mrl_sia) are trained, and output goes to
-    h11_probe/runs_kl/seed<Seed>/ so it never mixes with the KL-off runs.
+    layerwise_probe/runs_kl/seed<Seed>/ so it never mixes with the KL-off runs.
 
 .PARAMETER DryRun
     Print what would run for each arm without training anything.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File h11_probe\train_all.ps1 -Seed 42
+    powershell -ExecutionPolicy Bypass -File layerwise_probe\train_all.ps1 -Seed 42
 #>
 param(
     [int]$Seed = 42,
@@ -48,11 +48,11 @@ $ErrorActionPreference = "Stop"
 
 if ($AttentionKL) {
     $Models = @("mipic", "mrl_sia")
-    $RunsRel = "h11_probe\runs_kl"
+    $RunsRel = "layerwise_probe\runs_kl"
     $KLValue = "1"
 } else {
     $Models = @("mrl", "mrl_pic", "mipic", "mrl_sia")
-    $RunsRel = "h11_probe\runs"
+    $RunsRel = "layerwise_probe\runs"
     $KLValue = "0"
 }
 

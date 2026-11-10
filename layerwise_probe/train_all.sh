@@ -4,12 +4,12 @@
 #
 # Runs the unmodified run_experiments.py once per arm on a single GPU, with the
 # Kaggle-matching defaults (5 epochs, lr 2e-5, max length 256, batch 16).
-# Output goes to h11_probe/runs/seed<SEED>/.
+# Output goes to layerwise_probe/runs/seed<SEED>/.
 #
 # The SIA attention-KL term (Eq. 6) is pinned OFF with MIPIC_ATTENTION_KL=0, the
-# configuration of every run under h11_probe/runs/. The repository default is ON
+# configuration of every run under layerwise_probe/runs/. The repository default is ON
 # (as in the paper), so the pin keeps those runs reproducible. --attention-kl
-# trains with KL ON, only the SIA arms (mipic, mrl_sia), into h11_probe/runs_kl/.
+# trains with KL ON, only the SIA arms (mipic, mrl_sia), into layerwise_probe/runs_kl/.
 #
 # An arm is skipped if it already finished cleanly: best.pt exists AND its entry
 # is in tweeteval_results.json. The exit code alone is not trusted, because
@@ -20,7 +20,7 @@
 # resumed run could keep the wrong best.pt.
 #
 # Usage (from anywhere):
-#   bash h11_probe/train_all.sh [--seed N] [--python PYTHON] [--attention-kl] [--dry-run]
+#   bash layerwise_probe/train_all.sh [--seed N] [--python PYTHON] [--attention-kl] [--dry-run]
 set -euo pipefail
 
 SEED=42
@@ -38,9 +38,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ $ATTENTION_KL -eq 1 ]]; then
-    MODELS=(mipic mrl_sia); RUNS_REL="h11_probe/runs_kl"
+    MODELS=(mipic mrl_sia); RUNS_REL="layerwise_probe/runs_kl"
 else
-    MODELS=(mrl mrl_pic mipic mrl_sia); RUNS_REL="h11_probe/runs"
+    MODELS=(mrl mrl_pic mipic mrl_sia); RUNS_REL="layerwise_probe/runs"
 fi
 # Any of these left in the environment would change the run away from the
 # Kaggle-matching defaults, truncate it, or turn it into a smoke test.

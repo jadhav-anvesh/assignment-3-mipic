@@ -1,4 +1,4 @@
-# Exact package versions used for the h11_probe work (seeds 42, 1, 2 and the KL-on runs).
+# Exact package versions used for the layerwise_probe work (seeds 42, 1, 2 and the KL-on runs).
 # Trimmed from `pip freeze` to the third-party packages the repository imports, plus
 # the libraries transformers and datasets need at runtime (tokenizers, pyarrow, ...).
 #
