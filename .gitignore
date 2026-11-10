@@ -63,6 +63,6 @@ h11_probe/runs_kl/*/*
 .env.*
 .idea/
 .vscode/
-# H1: extracted features (3.5 GB) stay local; plan, notebook and results are tracked.
-H1/features/
-!H1/results/
+# H1 (experiments/coarse_to_fine): extracted features (3.5 GB) stay local; plan, notebook and results are tracked.
+experiments/coarse_to_fine/features/
+!experiments/coarse_to_fine/results/
