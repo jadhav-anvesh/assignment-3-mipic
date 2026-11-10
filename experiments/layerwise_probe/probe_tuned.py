@@ -7,13 +7,13 @@ training rows only. The scaler sits inside the pipeline, so in every fold it is
 fitted on that fold's training part, and the final refit scales with statistics
 from the probe training rows only. Test rows are always the full test split.
 
-Outputs, in layerwise_probe/results/:
+Outputs, in experiments/layerwise_probe/results/:
     probe_tuned_{tag}.csv           one row per (model, size, rep, dim), with chosen C
     probe_tuned_{tag}_summary.csv   per (model, size, dim): mean and SD of F1,
                                     paired difference to --reference, C counts
 
 Example, from the repository root:
-    python layerwise_probe/probe_tuned.py --models base mrl_s42 mrl_pic_s42 mipic_s42 mrl_sia_s42
+    python experiments/layerwise_probe/probe_tuned.py --models base mrl_s42 mrl_pic_s42 mipic_s42 mrl_sia_s42
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ import warnings
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -33,7 +33,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from joblib import Parallel, delayed  # noqa: E402
 
-from layerwise_probe.probe_size import load_pooler, subset_indices  # noqa: E402
+from experiments.layerwise_probe.probe_size import load_pooler, subset_indices  # noqa: E402
 
 C_GRID = (0.01, 0.1, 1.0, 10.0, 100.0)
 CV_SEED = 0
@@ -77,7 +77,7 @@ def fit_tuned(x_train, y_train, x_test, y_test, dim: int) -> dict:
 def bootstrap_full(preds: dict, labels: np.ndarray, models: List[str], reference: str, dims: List[int],
                    n_resamples: int = 1000, seed: int = 0) -> pd.DataFrame:
     """Paired bootstrap of F1(model) - F1(reference) on the full-size fits, as in bootstrap.py."""
-    from layerwise_probe.bootstrap import macro_f1_rows
+    from experiments.layerwise_probe.bootstrap import macro_f1_rows
 
     n = len(labels)
     idx = np.random.default_rng(seed).integers(0, n, size=(n_resamples, n))
@@ -106,8 +106,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--dims", nargs="+", type=int, default=[16, 64, 768])
     parser.add_argument("--seed", type=int, default=0, help="Must match probe_size.py to reuse its subsets.")
     parser.add_argument("--tag", default="s42")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     parser.add_argument("--n-jobs", type=int, default=-1)
     args = parser.parse_args(argv)
 

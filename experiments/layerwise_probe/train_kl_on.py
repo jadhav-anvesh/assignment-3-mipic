@@ -21,8 +21,8 @@ Guard: if ``sia_attn_loss`` is exactly 0 on every one of the first 50 training
 steps, training stops with an error, because that means KL did not turn on.
 
 Examples, from the repository root:
-    python layerwise_probe/train_kl_on.py --model mrl_sia --seed 42 --output-dir layerwise_probe/runs_kl/seed42
-    python layerwise_probe/train_kl_on.py --model mipic --seed 42 --output-dir layerwise_probe/runs_kl/seed42 --dry-run
+    python experiments/layerwise_probe/train_kl_on.py --model mrl_sia --seed 42 --output-dir experiments/layerwise_probe/runs_kl/seed42
+    python experiments/layerwise_probe/train_kl_on.py --model mipic --seed 42 --output-dir experiments/layerwise_probe/runs_kl/seed42 --dry-run
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 KL_CHECK_STEPS = 50
 KL_OFF_NAMES = ("mrl", "mrl_sia", "mrl_pic", "mipic")
@@ -173,7 +173,7 @@ def refuse_kl_off_folder(output_dir: Path) -> None:
     clash = [name for name in existing.get("evaluations", {}) if name.split("_last_epoch")[0] in KL_OFF_NAMES]
     if clash:
         raise SystemExit(f"{results_path} already holds KL-off results ({', '.join(clash)}). "
-                         "Use a separate --output-dir, e.g. layerwise_probe/runs_kl/seed<N>.")
+                         "Use a separate --output-dir, e.g. experiments/layerwise_probe/runs_kl/seed<N>.")
 
 
 def dry_run(model: str) -> None:

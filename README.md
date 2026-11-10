@@ -22,7 +22,7 @@ A Logistic Regression probe is fitted on the frozen encoder representations at e
 
 ## Repository structure
 
-The repository has two parts. The MIPIC implementation (models, losses, training, evaluation and tests) matches [MIPIC_hypotheses](https://github.com/maverick-0215/MIPIC_hypotheses). `layerwise_probe/` holds the probing experiments that test the paper's claims. The POS-probe, Indic and routing experiments from the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1), are not included.
+The repository has two parts. The MIPIC implementation (models, losses, training, evaluation and tests) matches [MIPIC_hypotheses](https://github.com/maverick-0215/MIPIC_hypotheses). `experiments/layerwise_probe/` holds the probing experiments that test the paper's claims. The POS-probe, Indic and routing experiments from the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1), are not included.
 
 ```text
 .
@@ -45,7 +45,7 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 │   ├── README.md                 # Kaggle (2x T4) setup and run instructions
 │   └── kaggle_bootstrap.py
 │
-├── layerwise_probe/              # Probing experiments
+├── experiments/layerwise_probe/  # Probing experiments
 │   ├── FINDINGS.md               # Findings 1 to 9 with numbers, CIs and caveats
 │   ├── CROSS_SEED.md             # Cross-seed tables (seeds 42, 1, 2)
 │   ├── train_all.ps1 / .sh       # Train the four arms for one seed (attention KL pinned off)
@@ -69,7 +69,7 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 └── requirements.txt              # Canonical dependencies for all environments
 ```
 
-**Attention KL.** `MIPIC_ATTENTION_KL` switches the SIA attention-KL term (Eq. 6) on or off. It is on by default, as in the paper. The `layerwise_probe` runs were made with it off, so `layerwise_probe/train_all.*` set `MIPIC_ATTENTION_KL=0`; pass `-AttentionKL` / `--attention-kl` to train the SIA arms with it on.
+**Attention KL.** `MIPIC_ATTENTION_KL` switches the SIA attention-KL term (Eq. 6) on or off. It is on by default, as in the paper. The `layerwise_probe` runs were made with it off, so `experiments/layerwise_probe/train_all.*` set `MIPIC_ATTENTION_KL=0`; pass `-AttentionKL` / `--attention-kl` to train the SIA arms with it on.
 
 ## Requirements
 

@@ -6,7 +6,7 @@ extract_cls.py. The checkpoint and max_length are read from the feature folder's
 meta.json, so the check always uses the encoder that produced the features.
 
 Example, from the repository root:
-    python layerwise_probe/check_padding.py --name base
+    python experiments/layerwise_probe/check_padding.py --name base
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -25,7 +25,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import torch  # noqa: E402
 
-from layerwise_probe.load_encoder import load_encoder  # noqa: E402
+from experiments.layerwise_probe.load_encoder import load_encoder  # noqa: E402
 
 TEST_CSV = REPO_ROOT / "data" / "tweet_test.csv"
 
@@ -33,7 +33,7 @@ TEST_CSV = REPO_ROOT / "data" / "tweet_test.csv"
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Check that padding does not change saved [CLS] vectors.")
     parser.add_argument("--name", required=True, help="Feature folder name, e.g. base, mrl, mrl_pic, mipic.")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "features")
     parser.add_argument("--rows", type=int, default=5, help="Number of test sentences to check.")
     parser.add_argument("--layer", type=int, default=6)
     args = parser.parse_args(argv)

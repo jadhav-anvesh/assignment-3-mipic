@@ -15,11 +15,11 @@ measures how linear the pooler's tanh is on real inputs, using base's saved
 test layer 6 [CLS] features: the largest |pre-activation| and the largest
 relative gap (|x| - |tanh x|) / |x|.
 
-Outputs layerwise_probe/results/pooler_check.csv (one row per tensor) and prints the
+Outputs experiments/layerwise_probe/results/pooler_check.csv (one row per tensor) and prints the
 tanh linearity numbers.
 
 Example, from the repository root:
-    python layerwise_probe/pooler_check.py
+    python experiments/layerwise_probe/pooler_check.py
 """
 
 from __future__ import annotations
@@ -29,14 +29,14 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from layerwise_probe.load_encoder import TINYBERT_6L_MODEL_NAME, load_encoder  # noqa: E402
+from experiments.layerwise_probe.load_encoder import TINYBERT_6L_MODEL_NAME, load_encoder  # noqa: E402
 
 
 def stats(name: str, w: np.ndarray) -> dict:
@@ -73,8 +73,8 @@ def raw_checkpoint() -> dict:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Randomness statistics of base TinyBERT's pooler.")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features" / "base")
-    parser.add_argument("--out", type=Path, default=REPO_ROOT / "layerwise_probe" / "results" / "pooler_check.csv")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "features" / "base")
+    parser.add_argument("--out", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results" / "pooler_check.csv")
     args = parser.parse_args(argv)
 
     encoder, _ = load_encoder(None, device="cpu")

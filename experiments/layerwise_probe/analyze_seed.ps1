@@ -4,8 +4,8 @@
 
 .DESCRIPTION
     Models are discovered from {RunsDir}/seed{Seed}/checkpoints/<model>/best.pt,
-    so this works for layerwise_probe/runs (mrl, mrl_pic, mipic, mrl_sia) and
-    layerwise_probe/runs_kl (mrl_sia_kl, mipic_kl) alike. A model is analysed only if
+    so this works for experiments/layerwise_probe/runs (mrl, mrl_pic, mipic, mrl_sia) and
+    experiments/layerwise_probe/runs_kl (mrl_sia_kl, mipic_kl) alike. A model is analysed only if
     its training finished cleanly: best.pt exists AND its entry is in
     tweeteval_results.json. That keeps a model that is still training (best.pt
     is written after epoch 1) out of the analysis.
@@ -19,12 +19,12 @@
       4. subset_probe.py  --name N --n-random 20
 
     A step is skipped when its output already exists, so reruns are safe:
-      1. layerwise_probe/features/N/meta.json (written last by extract_cls.py), or
+      1. experiments/layerwise_probe/features/N/meta.json (written last by extract_cls.py), or
          steps 2 and 4 are both done (the features are no longer needed)
-      2. layerwise_probe/results/N_grid.csv and N_preds.npz
-      3. layerwise_probe/results/N_sts_clean.csv
-     3b. layerwise_probe/results/N_sts.csv
-      4. layerwise_probe/results/N_subsets.csv and N_subsets_summary.csv
+      2. experiments/layerwise_probe/results/N_grid.csv and N_preds.npz
+      3. experiments/layerwise_probe/results/N_sts_clean.csv
+     3b. experiments/layerwise_probe/results/N_sts.csv
+      4. experiments/layerwise_probe/results/N_subsets.csv and N_subsets_summary.csv
     Steps 2 and 4 need the features, and step 4 also needs step 2's grid, so a
     failure upstream blocks them. Steps 3 and 3b read the checkpoint and always run.
 
@@ -34,26 +34,26 @@
     Seed folder to analyse. Default 42.
 
 .PARAMETER RunsDir
-    Folder holding seed<N>/. Default layerwise_probe/runs. Relative paths are resolved
+    Folder holding seed<N>/. Default experiments/layerwise_probe/runs. Relative paths are resolved
     against the repository root.
 
 .PARAMETER DryRun
     Print what would run or be skipped for each model, without running anything.
 
 .PARAMETER DeleteFeatures
-    After step 4 is done, delete layerwise_probe/features/N/. Results and prediction
-    files (in layerwise_probe/results/) are kept.
+    After step 4 is done, delete experiments/layerwise_probe/features/N/. Results and prediction
+    files (in experiments/layerwise_probe/results/) are kept.
 
 .PARAMETER Python
     Python executable. Default: "python" from PATH.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File layerwise_probe\analyze_seed.ps1 -Seed 42
-    powershell -ExecutionPolicy Bypass -File layerwise_probe\analyze_seed.ps1 -Seed 42 -RunsDir layerwise_probe\runs_kl -DeleteFeatures
+    powershell -ExecutionPolicy Bypass -File experiments\layerwise_probe\analyze_seed.ps1 -Seed 42
+    powershell -ExecutionPolicy Bypass -File experiments\layerwise_probe\analyze_seed.ps1 -Seed 42 -RunsDir experiments\layerwise_probe\runs_kl -DeleteFeatures
 #>
 param(
     [int]$Seed = 42,
-    [string]$RunsDir = "layerwise_probe/runs",
+    [string]$RunsDir = "experiments/layerwise_probe/runs",
     [switch]$DryRun,
     [switch]$DeleteFeatures,
     [string]$Python = "python"
@@ -61,15 +61,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$RepoRoot = Split-Path -Parent $PSScriptRoot
+$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if (-not [System.IO.Path]::IsPathRooted($RunsDir)) { $RunsDir = Join-Path $RepoRoot $RunsDir }
 $RunsDir = [System.IO.Path]::GetFullPath($RunsDir)
 $SeedDir = Join-Path $RunsDir "seed$Seed"
 $CkptRoot = Join-Path $SeedDir "checkpoints"
 $LogDir = Join-Path $SeedDir "logs"
 $ResultsJson = Join-Path $SeedDir "tweeteval_results.json"
-$FeaturesRoot = Join-Path $RepoRoot "layerwise_probe\features"
-$ResultsRoot = Join-Path $RepoRoot "layerwise_probe\results"
+$FeaturesRoot = Join-Path $RepoRoot "experiments\layerwise_probe\features"
+$ResultsRoot = Join-Path $RepoRoot "experiments\layerwise_probe\results"
 $PythonExe = (Get-Command $Python -ErrorAction Stop).Source
 
 function Write-Utf8Line([string]$Path, [string]$Text) {
@@ -149,11 +149,11 @@ try {
             "4"  = @((Join-Path $ResultsRoot "${name}_subsets.csv"), (Join-Path $ResultsRoot "${name}_subsets_summary.csv"))
         }
         $steps = @(
-            @{ N = "1"; Label = "1 extract_cls"; Args = "layerwise_probe\extract_cls.py --name $name --checkpoint `"$ckpt`"" },
-            @{ N = "2"; Label = "2 probe_grid"; Args = "layerwise_probe\probe_grid.py --name $name --check-readme" },
-            @{ N = "3"; Label = "3 sts_eval (clean)"; Args = "layerwise_probe\sts_eval.py --name $name --checkpoint `"$ckpt`" --drop-overlap" },
-            @{ N = "3b"; Label = "3b sts_eval (all pairs)"; Args = "layerwise_probe\sts_eval.py --name $name --checkpoint `"$ckpt`"" },
-            @{ N = "4"; Label = "4 subset_probe"; Args = "layerwise_probe\subset_probe.py --name $name --n-random 20" }
+            @{ N = "1"; Label = "1 extract_cls"; Args = "experiments\layerwise_probe\extract_cls.py --name $name --checkpoint `"$ckpt`"" },
+            @{ N = "2"; Label = "2 probe_grid"; Args = "experiments\layerwise_probe\probe_grid.py --name $name --check-readme" },
+            @{ N = "3"; Label = "3 sts_eval (clean)"; Args = "experiments\layerwise_probe\sts_eval.py --name $name --checkpoint `"$ckpt`" --drop-overlap" },
+            @{ N = "3b"; Label = "3b sts_eval (all pairs)"; Args = "experiments\layerwise_probe\sts_eval.py --name $name --checkpoint `"$ckpt`"" },
+            @{ N = "4"; Label = "4 subset_probe"; Args = "experiments\layerwise_probe\subset_probe.py --name $name --n-random 20" }
         )
         $done = @{}
         foreach ($n in $out.Keys) { $done[$n] = Test-AllExist $out[$n] }

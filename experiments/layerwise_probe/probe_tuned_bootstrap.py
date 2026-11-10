@@ -13,12 +13,12 @@ and runs a paired bootstrap of model minus base per (size, width):
 1000 resamples of the test rows from default_rng(0), one index matrix shared
 by every cell, model and subset, as in bootstrap.py.
 
-Outputs, in layerwise_probe/results/:
+Outputs, in experiments/layerwise_probe/results/:
     probe_tuned_{tag}_small_preds.npz        test predictions, key {model}_n{size}_r{rep}_d{dim}
     probe_tuned_{tag}_small_bootstrap.csv    one row per (model, size, dim)
 
 Example, from the repository root:
-    python layerwise_probe/probe_tuned_bootstrap.py --tag s1 --models base mrl_s1 mrl_pic_s1 mipic_s1 mrl_sia_s1
+    python experiments/layerwise_probe/probe_tuned_bootstrap.py --tag s1 --models base mrl_s1 mrl_pic_s1 mipic_s1 mrl_sia_s1
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -37,9 +37,9 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from joblib import Parallel, delayed  # noqa: E402
 
-from layerwise_probe.bootstrap import macro_f1_rows  # noqa: E402
-from layerwise_probe.probe_size import load_pooler, subset_indices  # noqa: E402
-from layerwise_probe.probe_tuned import fit_tuned  # noqa: E402
+from experiments.layerwise_probe.bootstrap import macro_f1_rows  # noqa: E402
+from experiments.layerwise_probe.probe_size import load_pooler, subset_indices  # noqa: E402
+from experiments.layerwise_probe.probe_tuned import fit_tuned  # noqa: E402
 
 
 def main(argv: Optional[List[str]] = None) -> None:
@@ -53,8 +53,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--boot-seed", type=int, default=0)
     parser.add_argument("--n-resamples", type=int, default=1000)
     parser.add_argument("--tag", required=True)
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "features")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     parser.add_argument("--n-jobs", type=int, default=-1)
     args = parser.parse_args(argv)
 

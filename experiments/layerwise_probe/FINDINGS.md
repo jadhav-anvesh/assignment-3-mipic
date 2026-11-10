@@ -1,10 +1,12 @@
 # H11 probe: findings log
 
-A running log of results from the `layerwise_probe/` pipeline. Each finding states a claim, the exact numbers behind it and where they came from, the caveats, and the hypothesis in [hypothesis.md](../hypothesis.md) it bears on.
+A running log of results from the `experiments/layerwise_probe/` pipeline. Each finding states a claim, the exact numbers behind it and where they came from, the caveats, and the hypothesis in [hypothesis.md](../hypothesis.md) it bears on.
 
 All probe numbers are macro-F1 (%) on the 3-class tweet sentiment test split (3,432 rows), from a logistic regression fitted on the full train split (26,732 rows). The probe uses the same settings as `evaluate.py`: `LogisticRegression(random_state=42, max_iter=1000)` with sklearn defaults otherwise and no feature scaling. Features are stored as float32.
 
 **Repository note (2026-11-05).** Every run in this log was trained with attention KL hardcoded off. The model code has since been replaced by the MIPIC_hypotheses version, where `MIPIC_ATTENTION_KL` switches it (default on); `train_all.ps1`/`.sh` pin it off so these runs stay reproducible. Statements below that the code "hardcodes it off", and line links into `models/`, describe the code these runs used.
+
+**Folder note.** This folder was renamed from `h11_probe/` to `layerwise_probe/` and then moved to `experiments/layerwise_probe/`, so older result files and logs still show the old paths.
 
 ---
 
@@ -21,7 +23,7 @@ All probe numbers are macro-F1 (%) on the 3-class tweet sentiment test split (3,
 | Pooler, 64D | 47.54 | 61.67 | 58.11 | 64.40 | 62.09 |
 | Pooler, 768D | 49.56 | 65.45 | 62.54 | 66.52 | 65.06 |
 
-Source: `layerwise_probe/results/{base,mrl_s42,mrl_pic_s42,mipic_s42,mrl_sia_s42}_sts_clean.csv`, from `sts_eval.py --drop-overlap` (seed 42 values). The trained models lead by 13 to 17 points at (6,768) and by 10.6 to 17.6 points at every width of the pooler row in seed 42. *Updated 2026-11-05:* a paired bootstrap over STS pairs (`layerwise_probe/bootstrap_sts.py`, 1,000 resamples, seed 0) puts every trained model above base at (6,768) and at every pooler width in all three seeds: 96 of 96 CIs above zero, differences +10.57 to +18.71 (`layerwise_probe/results/bootstrap_sts_{model}_s{42,1,2}_vs_base_clean.csv`). So training is not useless: it moves the representation toward sentence similarity, at the expense of sentiment information.
+Source: `experiments/layerwise_probe/results/{base,mrl_s42,mrl_pic_s42,mipic_s42,mrl_sia_s42}_sts_clean.csv`, from `sts_eval.py --drop-overlap` (seed 42 values). The trained models lead by 13 to 17 points at (6,768) and by 10.6 to 17.6 points at every width of the pooler row in seed 42. *Updated 2026-11-05:* a paired bootstrap over STS pairs (`experiments/layerwise_probe/bootstrap_sts.py`, 1,000 resamples, seed 0) puts every trained model above base at (6,768) and at every pooler width in all three seeds: 96 of 96 CIs above zero, differences +10.57 to +18.71 (`experiments/layerwise_probe/results/bootstrap_sts_{model}_s{42,1,2}_vs_base_clean.csv`). So training is not useless: it moves the representation toward sentence similarity, at the expense of sentiment information.
 
 ### Across seeds 42, 1 and 2
 
@@ -31,7 +33,7 @@ Source: `layerwise_probe/results/{base,mrl_s42,mrl_pic_s42,mipic_s42,mrl_sia_s42
 
 **Literal pre-registered verdict: OVERTURNED.** Two cells meet the subset rule, in two different seeds: seed 42, MRL+SIA, 3,000 rows, 16D (+0.47 on average) and seed 1, MRL+PIC, 1,000 rows, 16D (+0.55). Both are about half a point, roughly what the rule produces by chance.
 
-**Bootstrap verdict: HOLDS.** The small-size cells were then tested the same way as every other claim in this log: a paired bootstrap of model minus base on the test predictions, averaging each model's F1 over its 5 subset fits within each resample (same resampled test rows for both models, 1,000 resamples, seed 0; `layerwise_probe/probe_tuned_bootstrap.py`). In that test both flagged cells include zero: +0.47 [-1.00, +1.94] and +0.55 [-0.89, +1.93]. Across all tests no trained model is significantly above base in any cell of any seed:
+**Bootstrap verdict: HOLDS.** The small-size cells were then tested the same way as every other claim in this log: a paired bootstrap of model minus base on the test predictions, averaging each model's F1 over its 5 subset fits within each resample (same resampled test rows for both models, 1,000 resamples, seed 0; `experiments/layerwise_probe/probe_tuned_bootstrap.py`). In that test both flagged cells include zero: +0.47 [-1.00, +1.94] and +0.55 [-0.89, +1.93]. Across all tests no trained model is significantly above base in any cell of any seed:
 
 | Test (cells per seed) | Seed 42: base above / model above | Seed 1 | Seed 2 |
 |---|---|---|---|
@@ -42,7 +44,7 @@ Source: `layerwise_probe/results/{base,mrl_s42,mrl_pic_s42,mipic_s42,mrl_sia_s42
 
 With 228 bootstrap cells in total, a few CIs excluding zero in either direction would be expected by chance even if nothing were going on (about 5 to 6 per direction at the 95% level if every true difference were zero), so a stray cell would not have been strong evidence either way. None appears in the trained-model direction.
 
-Sources: `layerwise_probe/results/bootstrap_{model}_s{42,1,2}_vs_base.csv` (default), `probe_tuned_s{42,1,2}_bootstrap.csv` (tuned, full size), `probe_tuned_s{42,1,2}_small_bootstrap.csv` (tuned, small sizes), `cross_seed_finding1.csv`; summary in [CROSS_SEED.md](CROSS_SEED.md), table 5.
+Sources: `experiments/layerwise_probe/results/bootstrap_{model}_s{42,1,2}_vs_base.csv` (default), `probe_tuned_s{42,1,2}_bootstrap.csv` (tuned, full size), `probe_tuned_s{42,1,2}_small_bootstrap.csv` (tuned, small sizes), `cross_seed_finding1.csv`; summary in [CROSS_SEED.md](CROSS_SEED.md), table 5.
 
 **Other checks across seeds.**
 - **kNN (check 7):** base is ahead in 140 of 144 (seed, metric, k, width, model) cells; the 4 exceptions are 0.16 to 1.66 points, all at k = 10 and 16D or 64D (no CIs; `cross_seed_knn.csv`).
@@ -115,8 +117,8 @@ The frozen, untrained TinyBERT-6L `pooler_output` scores higher than the best of
 | 768 | 71.73 | MRL | 67.24 | +4.49 |
 
 Sources:
-- Untrained column: `layerwise_probe/results/base_grid.csv`, rows with `layer = pooler`. All 7 fits converged.
-- Trained columns: the "Current controlled results" table in [README.md](../README.md), also stored in `layerwise_probe/expected_readme.json`.
+- Untrained column: `experiments/layerwise_probe/results/base_grid.csv`, rows with `layer = pooler`. All 7 fits converged.
+- Trained columns: the "Current controlled results" table in [README.md](../README.md), also stored in `experiments/layerwise_probe/expected_readme.json`.
 
 Both sides use the same read-out (`pooler_output`, the vector `evaluate.py` probes), the same probe settings and the same train and test files. Note that the README models were trained with an older code version (MIPIC_FINAL_V20, attention KL on), not the code currently in this repository (see Finding 5).
 
@@ -134,7 +136,7 @@ We retrained all four models locally with the current repository code and its de
 | 512 | 71.63 | MRL | 70.96 | +0.68 |
 | 768 | 71.73 | MRL | 71.52 | +0.22 |
 
-Source: `layerwise_probe/runs/seed42/tweeteval_results.json`, `evaluations` entries for `mrl`, `mrl_sia`, `mrl_pic` and `mipic`. These are the epochs chosen by the held-out probe (`best.pt`). All probe fits converged.
+Source: `experiments/layerwise_probe/runs/seed42/tweeteval_results.json`, `evaluations` entries for `mrl`, `mrl_sia`, `mrl_pic` and `mipic`. These are the epochs chosen by the held-out probe (`best.pt`). All probe fits converged.
 
 Every gap in this table except 64D (1.33) is within the rough 0.8 point standard error, so on this evidence the best retrained model and base are effectively tied at most widths. Neither side clearly wins. MRL's last-epoch checkpoint (`mrl_last_epoch`) gets even closer at 768D (71.66, a gap of 0.07). **This is one seed. The finding will be finalised after seeds 1 and 2**, together with a paired bootstrap.
 
@@ -172,10 +174,10 @@ Original links:
 | 512 | 73.07 | 72.79 | +0.28 |
 | 768 | 72.71 | 73.51 | -0.80 |
 
-Source: `layerwise_probe/results/base_grid.csv`, rows with `layer = 5` and `layer = 6`. The vectors are the raw `hidden_states[L][:, 0, :d]`, with no pooler applied. All fits at widths 16 to 128 converged quickly (at most 111 iterations).
+Source: `experiments/layerwise_probe/results/base_grid.csv`, rows with `layer = 5` and `layer = 6`. The vectors are the raw `hidden_states[L][:, 0, :d]`, with no pooler applied. All fits at widths 16 to 128 converged quickly (at most 111 iterations).
 
 **Caveats.**
-- **Small gaps, not yet tested.** Only the 16D gap (+1.70) is clearly larger than the rough 0.8 point standard error. The 32D, 64D and 128D gaps are close to it. Because both layers are scored on the same test rows, a paired bootstrap on `layerwise_probe/results/base_preds.npz` (keys `L5_d16` vs `L6_d16` and so on) will give a sharper answer and still needs to be run.
+- **Small gaps, not yet tested.** Only the 16D gap (+1.70) is clearly larger than the rough 0.8 point standard error. The 32D, 64D and 128D gaps are close to it. Because both layers are scored on the same test rows, a paired bootstrap on `experiments/layerwise_probe/results/base_preds.npz` (keys `L5_d16` vs `L6_d16` and so on) will give a sharper answer and still needs to be run.
 - **Wide widths are affected by convergence.** Layer 5 at 512D and 768D hit the 1000-iteration cap, so the comparison at those widths, including the 768D reversal, partly reflects the solver.
 - **Base model only.** This describes the starting point. Whether MRL, MRL+PIC or MIPIC change the ordering is the next comparison.
 
@@ -203,7 +205,7 @@ Source: `layerwise_probe/results/base_grid.csv`, rows with `layer = 5` and `laye
 
 For comparison, the final-layer read-outs at full width are `pooler_output` 49.56 and layer 6 [CLS] 49.74.
 
-Source: `layerwise_probe/results/base_sts_clean.csv` (produced by `sts_eval.py --drop-overlap`). Using all 1,379 test pairs (`base_sts.csv`) gives the same conclusion: layer 2 is best at every width by 7.15 to 9.13 points, and layer 2 at 32D (60.00) beats the pooler at 768D (48.87).
+Source: `experiments/layerwise_probe/results/base_sts_clean.csv` (produced by `sts_eval.py --drop-overlap`). Using all 1,379 test pairs (`base_sts.csv`) gives the same conclusion: layer 2 is best at every width by 7.15 to 9.13 points, and layer 2 at 32D (60.00) beats the pooler at 768D (48.87).
 
 **Caveats.**
 - **Raw [CLS] cosine is a weak baseline for the final layer.** The final-layer [CLS] of BERT-style models is known to work poorly for cosine similarity without fine-tuning, so the low layer 6 and pooler scores are expected. The result shows where similarity information is easiest to read with plain cosine. It doesn't show that early layers "understand" meaning better.
@@ -217,7 +219,7 @@ Source: `layerwise_probe/results/base_sts_clean.csv` (produced by `sts_eval.py -
 
 **Prediction, recorded 2026-11-04 before any trained-model STS results.** SimCSE-trained models (MRL, MRL+PIC, MIPIC) will beat base TinyBERT on STS-B at the final layer, even though they lose to base on sentiment (Finding 1). Concretely, on the clean pairs, their `pooler_output` at 768D will exceed base's 49.56 and their layer 6 [CLS] at 768D will exceed base's 49.74. Reasoning: the SimCSE objective is contrastive on sentence pairs and is known to fix the poor cosine geometry of untrained final layers, which would help STS directly while doing nothing for, or even hurting, a linear sentiment probe.
 
-**Outcome of the prediction, 2026-11-05: confirmed in all three seeds.** On the clean pairs, every trained model beats base at layer 6 [CLS] 768D and at every width of the pooler row, in seeds 42, 1 and 2: 96 of 96 paired bootstrap CIs lie above zero, with differences of +10.57 to +18.71 Spearman points (`layerwise_probe/bootstrap_sts.py` -> `layerwise_probe/results/bootstrap_sts_{model}_s{42,1,2}_vs_base_clean.csv`; summary in [CROSS_SEED.md](CROSS_SEED.md), table 3). Finding 3's own claim is about base and is unchanged.
+**Outcome of the prediction, 2026-11-05: confirmed in all three seeds.** On the clean pairs, every trained model beats base at layer 6 [CLS] 768D and at every width of the pooler row, in seeds 42, 1 and 2: 96 of 96 paired bootstrap CIs lie above zero, with differences of +10.57 to +18.71 Spearman points (`experiments/layerwise_probe/bootstrap_sts.py` -> `experiments/layerwise_probe/results/bootstrap_sts_{model}_s{42,1,2}_vs_base_clean.csv`; summary in [CROSS_SEED.md](CROSS_SEED.md), table 3). Finding 3's own claim is about base and is unchanged.
 
 ---
 
@@ -229,7 +231,7 @@ Source: `layerwise_probe/results/base_sts_clean.csv` (produced by `sts_eval.py -
 
 *Updated 2026-11-05 with seeds 1 and 2.* Seed variance under the current code is now measured, and it is much smaller than the gaps.
 
-**Evidence across seeds.** Pooler macro-F1, seed mean ± sample std over seeds 42, 1 and 2 (probe-grid refits, `layerwise_probe/results/{model}_s{42,1,2}_grid.csv`), against the README. Gap = seed mean minus README. In every cell the README value is below the lowest of the three seeds.
+**Evidence across seeds.** Pooler macro-F1, seed mean ± sample std over seeds 42, 1 and 2 (probe-grid refits, `experiments/layerwise_probe/results/{model}_s{42,1,2}_grid.csv`), against the README. Gap = seed mean minus README. In every cell the README value is below the lowest of the three seeds.
 
 | Width | MRL | README | Gap | MRL+PIC | README | Gap | MIPIC | README | Gap |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -241,7 +243,7 @@ Source: `layerwise_probe/results/base_sts_clean.csv` (produced by `sts_eval.py -
 | 512 | 71.17 ± 0.23 | 67.61 | +3.56 | 69.72 ± 1.21 | 64.27 | +5.45 | 68.54 ± 1.01 | 64.01 | +4.53 |
 | 768 | 71.47 ± 0.32 | 67.24 | +4.23 | 69.89 ± 1.14 | 64.82 | +5.07 | 68.86 ± 0.95 | 64.64 | +4.22 |
 
-Each gap is 2.2 to 15.7 seed standard deviations (up to 68.7 including MRL+SIA). Source: `layerwise_probe/results/cross_seed_readme.csv` and [CROSS_SEED.md](CROSS_SEED.md), table 9.
+Each gap is 2.2 to 15.7 seed standard deviations (up to 68.7 including MRL+SIA). Source: `experiments/layerwise_probe/results/cross_seed_readme.csv` and [CROSS_SEED.md](CROSS_SEED.md), table 9.
 
 **Model ranking at narrow widths across seeds.** At 16D the four seed means lie within 1.21 points of each other (MIPIC 60.75, MRL 61.22, MRL+PIC 61.92, MRL+SIA 61.96), each with a seed std of 0.42 to 1.36, so there is no reliable ranking at 16D. From 64D up MRL has the highest seed mean at every width, and MIPIC the lowest.
 
@@ -258,8 +260,8 @@ Each gap is 2.2 to 15.7 seed standard deviations (up to 68.7 including MRL+SIA).
 | 768 | 71.52 | 67.24 | +4.28 | 69.80 | 64.82 | +4.98 | 67.71 | 64.64 | +3.07 |
 
 Sources:
-- Local: `layerwise_probe/runs/seed42/tweeteval_results.json` (`evaluations.mrl`, `.mrl_pic`, `.mipic`), produced by `layerwise_probe/train_all.ps1 -Seed 42`. All 21 probe fits converged.
-- README: [README.md](../README.md), also in `layerwise_probe/expected_readme.json`.
+- Local: `experiments/layerwise_probe/runs/seed42/tweeteval_results.json` (`evaluations.mrl`, `.mrl_pic`, `.mipic`), produced by `experiments/layerwise_probe/train_all.ps1 -Seed 42`. All 21 probe fits converged.
+- README: [README.md](../README.md), also in `experiments/layerwise_probe/expected_readme.json`.
 
 **The README-vs-local gaps are as big as the README's method gaps.** The README's headline MIPIC advantage over MRL at 16D is +2.1 (58.60 vs 56.46). That is smaller than 19 of the 21 local-minus-README differences above (mean +3.53), and about the same as the smallest two (+2.00 and +2.04). These differences are not run-to-run noise: they combine a configuration change (Finding 5), different hardware and parallelism, and seed. Either way, a method gap of 2 points in the README can't be read as a method effect until the comparison is rerun under one configuration with several seeds.
 
@@ -274,7 +276,7 @@ Sources:
 - **Different data order and dropout masks.** One process versus two DDP ranks gives a different shuffling of the training corpus and different dropout masks, even with the same seed.
 - **Epoch selection doesn't explain it.** Locally the held-out probe chose epoch 1 for MRL and MRL+PIC and epoch 3 for MIPIC, while the README's MIPIC used epoch 1. But the local last-epoch checkpoints (`*_last_epoch` in the same JSON) are also above the README at every width, by 0.55 to 4.42 points.
 - **Three local seeds.** The seed std above comes from three runs per model, so it is itself a rough estimate. The README run is a single run, so its own seed variance is unknown; the gaps are large enough that this doesn't change the conclusion.
-- **Ranking claims are about seed means.** No seed-level significance test is reported with three seeds. Within each seed, the paired bootstraps in `layerwise_probe/results/bootstrap_*_s{42,1,2}_*.csv` give test-set CIs.
+- **Ranking claims are about seed means.** No seed-level significance test is reported with three seeds. Within each seed, the paired bootstraps in `experiments/layerwise_probe/results/bootstrap_*_s{42,1,2}_*.csv` give test-set CIs.
 
 **Relates to.**
 - **H15** (SIA is essential: MIPIC without SIA, i.e. MRL+PIC, should be clearly worse than MIPIC at 16D and 32D). In seed 42 it isn't: MRL+PIC and MIPIC are tied at 16D (61.43 vs 61.26) and at 32D (62.49 vs 62.55). On this one seed, adding SIA on top of PIC gives nothing at small widths. *Updated 2026-11-05:* the same holds across seeds at the pooler: MIPIC's seed mean is below MRL+PIC's at 16D (60.75 against 61.92) and 32D (63.06 against 63.70).
@@ -291,13 +293,13 @@ Sources:
 
 *Replaced 2026-11-04.* The first version of this finding said the KL setting "plausibly accounts for most of" the MRL+SIA gap. The KL-on retrain doesn't support that, and this version replaces it.
 
-**Claim.** The README numbers were produced by MIPIC_FINAL_V20 with the SIA attention KL term on; the current code hardcodes it off ([models/mrl_sia.py:119](../models/mrl_sia.py#L119), [models/mrl_sia_pic.py:148](../models/mrl_sia_pic.py#L148)). A local KL-on retrain (seed 42, `layerwise_probe/train_kl_on.py`) shows that turning KL on costs MRL+SIA 0.87 to 1.61 points and MIPIC 0.78 to 2.55 points of pooler macro-F1. That is roughly 11% to 24% of the 6.5 to 8 point MRL+SIA-specific gap, so **KL is not the main cause**. Every 95% CI for the KL cost lies between -3.93 and +0.79 points, so a cost of 6.5 points is ruled out at every width.
+**Claim.** The README numbers were produced by MIPIC_FINAL_V20 with the SIA attention KL term on; the current code hardcodes it off ([models/mrl_sia.py:119](../models/mrl_sia.py#L119), [models/mrl_sia_pic.py:148](../models/mrl_sia_pic.py#L148)). A local KL-on retrain (seed 42, `experiments/layerwise_probe/train_kl_on.py`) shows that turning KL on costs MRL+SIA 0.87 to 1.61 points and MIPIC 0.78 to 2.55 points of pooler macro-F1. That is roughly 11% to 24% of the 6.5 to 8 point MRL+SIA-specific gap, so **KL is not the main cause**. Every 95% CI for the KL cost lies between -3.93 and +0.79 points, so a cost of 6.5 points is ruled out at every width.
 
 With KL matched, local MIPIC lands 0.4 to 2.3 points above the README, inside MRL's 2.9 to 4.3 point shared offset. Local MRL+SIA is still 8.9 to 10.4 points above the README (5.1 to 7.0 after removing that offset). Whatever produces the rest is specific to the MRL+SIA arm of the Kaggle run.
 
 **Status: KL difference and code version difference confirmed; cause of the remaining gap unknown.** The KL-on runs exist for seed 42 only, so every statement about the KL cost (the 0.87 to 1.61 and 0.78 to 2.55 point ranges, the CIs, "KL is not the main cause", the 11% to 24% share and the decomposition table below) rests on **one training seed**. The size of the MRL+SIA gap itself rests on three seeds.
 
-*Updated 2026-11-05 with seeds 1 and 2.* The MRL+SIA gap to the README replicates: local KL-off MRL+SIA is above the README by 7.78 to 11.84 points per seed (seed means +8.70 to +11.52), with a seed std of only 0.17 to 1.11 points. MRL's shared offset across seeds is +2.89 to +4.76 (seed means). So the MRL+SIA-specific excess is not a seed-42 accident, and seed variance (explanation 5 below) cannot account for it. Source: `layerwise_probe/results/cross_seed_readme.csv`.
+*Updated 2026-11-05 with seeds 1 and 2.* The MRL+SIA gap to the README replicates: local KL-off MRL+SIA is above the README by 7.78 to 11.84 points per seed (seed means +8.70 to +11.52), with a seed std of only 0.17 to 1.11 points. MRL's shared offset across seeds is +2.89 to +4.76 (seed means). So the MRL+SIA-specific excess is not a seed-42 accident, and seed variance (explanation 5 below) cannot account for it. Source: `experiments/layerwise_probe/results/cross_seed_readme.csv`.
 
 ### Confirmed: KL was on in the Kaggle run
 
@@ -343,7 +345,7 @@ Settings that match in all three: seed 42, 5 epochs, lr 2e-5, max length 256, gl
 
 ### The KL cost, with paired bootstrap CIs
 
-Pooler macro-F1, KL on minus KL off. Values come from `layerwise_probe/results/bootstrap_mrl_sia_kl_s42_vs_mrl_sia_s42.csv` and `bootstrap_mipic_kl_s42_vs_mipic_s42.csv`: 1,000 paired resamples of the 3,432 test rows, seed 0. `*` = the 95% CI excludes zero.
+Pooler macro-F1, KL on minus KL off. Values come from `experiments/layerwise_probe/results/bootstrap_mrl_sia_kl_s42_vs_mrl_sia_s42.csv` and `bootstrap_mipic_kl_s42_vs_mipic_s42.csv`: 1,000 paired resamples of the 3,432 test rows, seed 0. `*` = the 95% CI excludes zero.
 
 | Width | MRL+SIA: KL on minus off | MIPIC: KL on minus off |
 |---:|---:|---:|
@@ -415,7 +417,7 @@ For comparison, local KL-on MIPIC minus README MIPIC is +1.76, +1.20, +0.41, +0.
 | MRL+PIC minus MRL | (1,16) | +9.74 [+7.86, +11.55] | +6.00 [+4.27, +7.89] | +16.21 [+14.03, +18.29] |
 | MRL+PIC minus MRL | (2,32) | +2.48 [+0.73, +4.31] | +3.46 [+1.72, +5.30] | +6.45 [+4.69, +8.39] |
 
-**Verdict: SUPPORTED (6 of 6 comparisons pass in 3 of 3 seeds).** The narrowest margin is still MRL+PIC at (2,32) in seed 42, lower bound +0.73. Sources: `layerwise_probe/results/bootstrap_{mipic,mrl_pic}_s{42,1,2}_vs_{mrl_s*,base}.csv`; summary in `layerwise_probe/results/cross_seed_h11_tests.csv`.
+**Verdict: SUPPORTED (6 of 6 comparisons pass in 3 of 3 seeds).** The narrowest margin is still MRL+PIC at (2,32) in seed 42, lower bound +0.73. Sources: `experiments/layerwise_probe/results/bootstrap_{mipic,mrl_pic}_s{42,1,2}_vs_{mrl_s*,base}.csv`; summary in `experiments/layerwise_probe/results/cross_seed_h11_tests.csv`.
 
 **Gains as a range across seeds, at every PIC checkpoint** (paired bootstrap difference per seed; `*` = CI excludes zero in that seed):
 
@@ -428,7 +430,7 @@ For comparison, local KL-on MIPIC minus README MIPIC is +1.76, +1.20, +0.41, +0.
 | (5,512) | -3.08 to -1.46 (3/3*) | -4.25 to -1.97 (3/3*) | -2.48 to -0.12 (1/3*) | -1.58 to +0.45 (2/3*) |
 | (6,768) | -2.77 to -2.02 (3/3*) | -5.19 to -3.03 (3/3*) | -2.96 to -0.64 (1/3*) | -1.10 to +0.39 (1/3*) |
 
-Sentiment macro-F1 at the checkpoints, seed mean ± std over seeds 42, 1 and 2 (`layerwise_probe/results/cross_seed_h11_f1.csv`):
+Sentiment macro-F1 at the checkpoints, seed mean ± std over seeds 42, 1 and 2 (`experiments/layerwise_probe/results/cross_seed_h11_f1.csv`):
 
 | (layer, dim) | Base | MRL | MRL+PIC | MIPIC | MRL+SIA |
 |---|---:|---:|---:|---:|---:|
@@ -443,7 +445,7 @@ Sentiment macro-F1 at the checkpoints, seed mean ± std over seeds 42, 1 and 2 (
 
 #### Sentiment macro-F1 at the six PIC checkpoints, seed 42
 
-Raw [CLS] `hidden_states[L][:, 0, :d]`, the vector PIC supervises. MRL+SIA KL on is in `layerwise_probe/results/mrl_sia_kl_s42_grid.csv` and is left out for space; it tracks MRL+SIA within 1.5 points.
+Raw [CLS] `hidden_states[L][:, 0, :d]`, the vector PIC supervises. MRL+SIA KL on is in `experiments/layerwise_probe/results/mrl_sia_kl_s42_grid.csv` and is left out for space; it tracks MRL+SIA within 1.5 points.
 
 | (layer, dim) | Base | MRL | MRL+PIC | MIPIC | MRL+SIA | MIPIC KL on |
 |---|---:|---:|---:|---:|---:|---:|
@@ -456,7 +458,7 @@ Raw [CLS] `hidden_states[L][:, 0, :d]`, the vector PIC supervises. MRL+SIA KL on
 
 #### Paired bootstrap CIs at every PIC checkpoint, seed 42
 
-`*` = CI excludes zero. Sources: `layerwise_probe/results/bootstrap_{a}_vs_{b}.csv`.
+`*` = CI excludes zero. Sources: `experiments/layerwise_probe/results/bootstrap_{a}_vs_{b}.csv`.
 
 | (layer, dim) | MIPIC minus MRL | MIPIC minus base | MRL+PIC minus MRL | MRL+SIA minus MRL |
 |---|---:|---:|---:|---:|
@@ -473,7 +475,7 @@ Raw [CLS] `hidden_states[L][:, 0, :d]`, the vector PIC supervises. MRL+SIA KL on
 - **It is PIC, not SIA (3 seeds).** MRL+SIA is indistinguishable from MRL at (1,16) in every seed (-0.68 to +0.15, no CI excluding zero), while MRL+PIC beats MRL there in every seed.
 - **Whether SIA adds to PIC depends on the seed (did not replicate).** In seed 42, MIPIC was 10.70 points above MRL+PIC at (1,16), so SIA appeared to add a lot on top of PIC. In seeds 1 and 2 MIPIC is 1.31 and 4.67 points *below* MRL+PIC there (2,32: +3.50, +1.19, -1.82). See Finding 7.
 - **Not only at the checkpoint width (seed 42).** At layer 1, MIPIC beats base at every width, from 54.65 vs 33.88 at 16D to 67.82 vs 63.14 at 768D. Not rechecked across seeds.
-- **The prefix is special in MIPIC: seed 42 only (did not replicate).** In seed 42's subset probe at (1,16), MIPIC's first 16 coordinates beat the mean of 20 random 16-coordinate subsets by +4.86 points (random SD 2.38). In seeds 1 and 2 the MIPIC prefix is at random level (-0.49 and -0.17), like every other model (`layerwise_probe/results/mipic_s{42,1,2}_subsets_summary.csv`). The seed 42 values for the other models were base +0.49, MRL +0.87, MRL+PIC -0.24, MRL+SIA +0.99, MRL+SIA KL on -0.43, MIPIC KL on -1.34.
+- **The prefix is special in MIPIC: seed 42 only (did not replicate).** In seed 42's subset probe at (1,16), MIPIC's first 16 coordinates beat the mean of 20 random 16-coordinate subsets by +4.86 points (random SD 2.38). In seeds 1 and 2 the MIPIC prefix is at random level (-0.49 and -0.17), like every other model (`experiments/layerwise_probe/results/mipic_s{42,1,2}_subsets_summary.csv`). The seed 42 values for the other models were base +0.49, MRL +0.87, MRL+PIC -0.24, MRL+SIA +0.99, MRL+SIA KL on -0.43, MIPIC KL on -1.34.
 
 ### With KL on, the paper's configuration (seed 42 only)
 
@@ -485,7 +487,7 @@ Raw [CLS] `hidden_states[L][:, 0, :d]`, the vector PIC supervises. MRL+SIA KL on
 | MIPIC KL on minus MRL | +8.84 [+6.98, +10.61]* | +4.07 [+2.42, +6.00]* |
 | MIPIC KL on minus base | +9.18 [+7.28, +10.91]* | +3.98 [+2.29, +5.82]* |
 
-Sources: the first row is `layerwise_probe/results/bootstrap_mipic_kl_s42_vs_mipic_s42.csv` (`bootstrap.py`). The other two are `bootstrap_mipic_kl_s42_vs_mrl_s42.csv` and `bootstrap_mipic_kl_s42_vs_base.csv`, written by `layerwise_probe/bootstrap_extra.py`, which runs `bootstrap.py` itself (same seed 0 index matrix, 1,000 resamples). KL on cuts MIPIC's (1,16) advantage roughly in half, but the H11 rule still passes for KL-on MIPIC at both checkpoints. The KL-on MIPIC (1,16) prefix also loses its advantage over random subsets (-1.34 against random).
+Sources: the first row is `experiments/layerwise_probe/results/bootstrap_mipic_kl_s42_vs_mipic_s42.csv` (`bootstrap.py`). The other two are `bootstrap_mipic_kl_s42_vs_mrl_s42.csv` and `bootstrap_mipic_kl_s42_vs_base.csv`, written by `experiments/layerwise_probe/bootstrap_extra.py`, which runs `bootstrap.py` itself (same seed 0 index matrix, 1,000 resamples). KL on cuts MIPIC's (1,16) advantage roughly in half, but the H11 rule still passes for KL-on MIPIC at both checkpoints. The KL-on MIPIC (1,16) prefix also loses its advantage over random subsets (-1.34 against random).
 
 ### STS-B at the early checkpoints
 
@@ -496,7 +498,7 @@ Spearman x100, clean pairs, n = 1,261, per seed (42 / 1 / 2; no CIs at these cel
 | (1,16) | 25.19 | 25.10 / 25.52 / 24.83 | 16.26 / 22.37 / 23.33 | 39.97 / 20.88 / 21.20 | 26.89 / 26.56 / 26.61 |
 | (2,32) | **59.29** | 56.28 / 55.85 / 54.62 | 41.96 / 37.72 / 48.34 | 52.37 / 40.89 / 37.49 | 55.98 / 54.87 / 56.79 |
 
-In seed 42 MIPIC's early sentiment gain also appeared on STS at (1,16) (39.97 against base's 25.19). **That did not replicate**: in seeds 1 and 2 MIPIC is below base there (20.88 and 21.20). At (2,32), base is best in every seed, and both PIC models are far below it. Seed 42's KL-on MIPIC scored 21.81 and 47.54. Source: `layerwise_probe/results/{model}_s{42,1,2}_sts_clean.csv`.
+In seed 42 MIPIC's early sentiment gain also appeared on STS at (1,16) (39.97 against base's 25.19). **That did not replicate**: in seeds 1 and 2 MIPIC is below base there (20.88 and 21.20). At (2,32), base is best in every seed, and both PIC models are far below it. Seed 42's KL-on MIPIC scored 21.81 and 47.54. Source: `experiments/layerwise_probe/results/{model}_s{42,1,2}_sts_clean.csv`.
 
 **Caveats.**
 - **Three training seeds.** The H11 verdict rests on seeds 42, 1 and 2; the sizes vary a lot between seeds (MIPIC minus MRL at (1,16): +4.69 to +20.43), so any single number should be quoted as a range.
@@ -520,7 +522,7 @@ In seed 42 MIPIC's early sentiment gain also appeared on STS at (1,16) (39.97 ag
 
 **Decision rule** (set before the seed 1 and 2 results): H16's early synergy holds if the raw [CLS] interaction at (1,16) has a CI excluding zero and is positive in all three seeds. **Verdict: does not hold** (1 of 3 seeds).
 
-Interaction (+MIPIC - MRL+SIA - MRL+PIC + MRL), macro-F1 points, 95% CI from 1,000 paired resamples; `*` = CI excludes zero. Sources: `layerwise_probe/results/bootstrap_interaction_s{42,1,2}.csv` (`bootstrap_extra.py`; seeds 1 and 2 with `--skip-pairwise`), summary in `layerwise_probe/results/cross_seed_interaction.csv`.
+Interaction (+MIPIC - MRL+SIA - MRL+PIC + MRL), macro-F1 points, 95% CI from 1,000 paired resamples; `*` = CI excludes zero. Sources: `experiments/layerwise_probe/results/bootstrap_interaction_s{42,1,2}.csv` (`bootstrap_extra.py`; seeds 1 and 2 with `--skip-pairwise`), summary in `experiments/layerwise_probe/results/cross_seed_interaction.csv`.
 
 | Cell | Seed 42 | Seed 1 | Seed 2 | Mean ± std across seeds |
 |---|---:|---:|---:|---:|
@@ -539,7 +541,7 @@ The other pooler widths are in [CROSS_SEED.md](CROSS_SEED.md), table 4. Where th
 
 **Original claim (seed 42).** The SIA x PIC interaction (MIPIC minus MRL+SIA minus MRL+PIC plus MRL, equivalently MIPIC's gain over MRL minus the SIA and PIC gains) is strongly **positive** on raw [CLS] at (1,16) and (2,32): together the two objectives give more than the sum of their parts. It is near zero at (3,64) and (4,256) and **negative** at (5,512) and (6,768). At the pooler (the read-out in Finding 4), it is negative or near zero at every width. Whether SIA and PIC are synergistic depends on where you read the representation.
 
-**Evidence.** Interaction in macro-F1 points, with 95% CIs from 1,000 paired resamples of the test rows (the same seed 0 index matrix as `bootstrap.py`, all four models scored on each resample). `*` = CI excludes zero. Source: `layerwise_probe/results/bootstrap_interaction_s42.csv`, written by `python layerwise_probe/bootstrap_extra.py` from `layerwise_probe/results/{mrl,mrl_pic,mrl_sia,mipic}_s42_preds.npz`. It holds all 49 (layer, width) cells, with the per-arm F1, the three gains, the interaction and its CI.
+**Evidence.** Interaction in macro-F1 points, with 95% CIs from 1,000 paired resamples of the test rows (the same seed 0 index matrix as `bootstrap.py`, all four models scored on each resample). `*` = CI excludes zero. Source: `experiments/layerwise_probe/results/bootstrap_interaction_s42.csv`, written by `python experiments/layerwise_probe/bootstrap_extra.py` from `experiments/layerwise_probe/results/{mrl,mrl_pic,mrl_sia,mipic}_s42_preds.npz`. It holds all 49 (layer, width) cells, with the per-arm F1, the three gains, the interaction and its CI.
 
 Raw [CLS] at the PIC checkpoints:
 
@@ -579,7 +581,7 @@ At the pooler, 3 of 7 CIs exclude zero (16D, 64D, 768D), all negative. The other
 
 **Claim (updated 2026-11-05).** Across the 12 KL-off runs (four models, seeds 42, 1 and 2), the held-out probe never selects epoch 4 or 5. It selects epoch 1 in 8 runs, epoch 2 in 3 (MRL in seeds 1 and 2, MRL+PIC in seed 2) and epoch 3 once (MIPIC in seed 42). The early choice happens for MRL, which has no PIC, as often as for the PIC models. On the test set, the selected checkpoint is above the last-epoch checkpoint in 78 of 84 (run, width) cells; the best per-run gain ranges from 0.82 to 6.35 points. The 6 cells where it is below are one width each for MRL in all three seeds and three widths for MRL+SIA in seed 2, the worst being -1.10. So further training generally hurts this probe, with or without PIC. It is **not evidence that PIC speeds up learning**, which is how [hypothesis.md](../hypothesis.md) used it for H14. The seed 42 wording "epoch 1 for almost every model" does not hold across seeds: MRL chose epoch 2 in seeds 1 and 2.
 
-**Selected epoch per seed** (`epoch_selection` in `layerwise_probe/runs/seed{42,1,2}/tweeteval_results.json`; `layerwise_probe/results/cross_seed_epochs.csv`):
+**Selected epoch per seed** (`epoch_selection` in `experiments/layerwise_probe/runs/seed{42,1,2}/tweeteval_results.json`; `experiments/layerwise_probe/results/cross_seed_epochs.csv`):
 
 | Model | Seed 42 | Seed 1 | Seed 2 | Test: selected minus last, pooler, range over widths (seed 42 / 1 / 2) |
 |---|---:|---:|---:|---|
@@ -608,7 +610,7 @@ MIPIC (KL off) is the only exception, and its curve is nearly flat: epoch 3 beat
 **Caveats.**
 - **Pooler only.** Selection and this comparison use the pooler probe. The raw [CLS] cells of Finding 6 were measured only on the selected checkpoint.
 - **No per-epoch checkpoints at the early cells.** Only `best.pt` and the last epoch's scores are kept, so learning curves at (1,16) and (2,32) can't be drawn from these runs.
-- **The selection metric is biased by feature scale.** `validation_probe_score` fits an unscaled logistic regression with C = 1 on 4,800 rows and averages over all seven widths, including 16D and 32D. Finding 1 (checks 5 and 6) shows that this setting favours the trained models simply because their pooler features are about twice base's scale. Base itself scores 63.16 on this metric, below the epoch 1 scores of MRL (65.37), MRL+PIC (64.56) and MRL+SIA (65.64), although base beats all of them on the full and the scaled probes. So the held-out curve in the table is not a clean measure of sentiment information, and it never registered that training was making the encoder worse than base. Whether the scale bias also shapes the choice between epochs (for example if feature scale grows with epochs) is untested; it would need the selection probe rerun with scaling on per-epoch checkpoints, which these runs don't keep. Source: `layerwise_probe/selection_probe.py` -> `layerwise_probe/results/selection_probe_s42.csv`. *Replicated 2026-11-05:* across seeds, the epoch 1 score minus base's 63.16 is +1.62 to +3.27 for MRL and +2.34 to +2.48 for MRL+SIA (above base in all three seeds), -0.62 to +2.94 for MRL+PIC (above in 2 of 3) and -0.74 to +0.28 for MIPIC (`layerwise_probe/results/selection_probe_s{42,1,2}.csv`, `cross_seed_selection.csv`).
+- **The selection metric is biased by feature scale.** `validation_probe_score` fits an unscaled logistic regression with C = 1 on 4,800 rows and averages over all seven widths, including 16D and 32D. Finding 1 (checks 5 and 6) shows that this setting favours the trained models simply because their pooler features are about twice base's scale. Base itself scores 63.16 on this metric, below the epoch 1 scores of MRL (65.37), MRL+PIC (64.56) and MRL+SIA (65.64), although base beats all of them on the full and the scaled probes. So the held-out curve in the table is not a clean measure of sentiment information, and it never registered that training was making the encoder worse than base. Whether the scale bias also shapes the choice between epochs (for example if feature scale grows with epochs) is untested; it would need the selection probe rerun with scaling on per-epoch checkpoints, which these runs don't keep. Source: `experiments/layerwise_probe/selection_probe.py` -> `experiments/layerwise_probe/results/selection_probe_s42.csv`. *Replicated 2026-11-05:* across seeds, the epoch 1 score minus base's 63.16 is +1.62 to +3.27 for MRL and +2.34 to +2.48 for MRL+SIA (above base in all three seeds), -0.62 to +2.94 for MRL+PIC (above in 2 of 3) and -0.74 to +0.28 for MIPIC (`experiments/layerwise_probe/results/selection_probe_s{42,1,2}.csv`, `cross_seed_selection.csv`).
 - **Three training seeds** for the KL-off rows; the two KL-on rows are seed 42 only, as is the observation below that KL-on runs stay flat after epoch 1.
 
 **Relates to.**
@@ -625,7 +627,7 @@ Contrastive training changes the pooler's weights by more, relative to their siz
 
 *Updated 2026-11-05.* Both swap directions have now been run in all three seeds, and they agree: base's pooler applied to trained layer 6 features keeps the trained model's scale and F1 (reverse swap), and trained poolers applied to base's layer 6 features keep base's scale and F1 (forward swap). In all 12 runs the pooler moves more than the encoder in relative terms, and the encoder carries the functional change.
 
-**Evidence across seeds 42, 1 and 2** (12 runs; `layerwise_probe/results/weight_drift_s{42,1,2}.csv`, `pooler_swap_s{42,1,2}.csv`, `pooler_swap_reverse_s{42,1,2}.csv`; summary in `cross_seed_finding9.csv` and [CROSS_SEED.md](CROSS_SEED.md), table 8):
+**Evidence across seeds 42, 1 and 2** (12 runs; `experiments/layerwise_probe/results/weight_drift_s{42,1,2}.csv`, `pooler_swap_s{42,1,2}.csv`, `pooler_swap_reverse_s{42,1,2}.csv`; summary in `cross_seed_finding9.csv` and [CROSS_SEED.md](CROSS_SEED.md), table 8):
 
 | Quantity | Range over the 12 runs |
 |---|---|
@@ -640,7 +642,7 @@ Contrastive training changes the pooler's weights by more, relative to their siz
 
 The layer pattern also replicates: the two PIC models change layer 1 more than layer 6 in all six of their runs, and MRL and MRL+SIA change layer 6 more than layer 1 in all six of theirs. `pooler_swap_reverse.py` checks that recomputing each model's own pooler from its checkpoint reproduces the stored `test_pooler.npy` (largest difference 4.6e-08) before swapping.
 
-**Evidence: the pooler is untrained.** From `layerwise_probe/pooler_check.py` -> `layerwise_probe/results/pooler_check.csv`:
+**Evidence: the pooler is untrained.** From `experiments/layerwise_probe/pooler_check.py` -> `experiments/layerwise_probe/results/pooler_check.csv`:
 
 | Statistic | Pooler weight (768x768) | iid Gaussian expectation | 36 trained encoder matrices, same checkpoint |
 |---|---:|---:|---:|
@@ -653,7 +655,7 @@ The layer pattern also replicates: the two PIC models change layer 1 more than l
 - Kurtosis alone would not settle it, since some trained attention matrices are also close to 3 (the lowest is 3.13). The singular value and row-norm statistics separate the pooler from every trained matrix.
 - As a random projection, the pooler costs little: base's pooler prefix scores 62.62 at 16D, against 62.16 for the first 16 raw coordinates of layer 6 [CLS] (`results/base_grid.csv`). At 768D the raw layer 6 [CLS] is ahead (73.51 against 71.73).
 
-**Evidence: where training acts, seed 42 detail.** Relative weight change, ||W_trained - W_base|| / ||W_base|| over each group, from `layerwise_probe/weight_drift.py` -> `layerwise_probe/results/weight_drift_s42.csv` (`best.pt` checkpoints). Seed 42's MIPIC is the only checkpoint taken from epoch 3, which likely explains why it drifted the most of all 12 runs:
+**Evidence: where training acts, seed 42 detail.** Relative weight change, ||W_trained - W_base|| / ||W_base|| over each group, from `experiments/layerwise_probe/weight_drift.py` -> `experiments/layerwise_probe/results/weight_drift_s42.csv` (`best.pt` checkpoints). Seed 42's MIPIC is the only checkpoint taken from epoch 3, which likely explains why it drifted the most of all 12 runs:
 
 | Group | MRL | MRL+SIA | MRL+PIC | MIPIC |
 |---|---:|---:|---:|---:|
@@ -665,7 +667,7 @@ The layer pattern also replicates: the two PIC models change layer 1 more than l
 
 The PIC models move the early layers most (MRL+PIC: 1.16% and 1.22% at layers 1 and 2, down to 0.67% at layer 6; MIPIC: 2.63% at layer 1, down to 1.16% at layer 6), while MRL and MRL+SIA move the late layers slightly more than the early ones.
 
-Pooler swap, from `layerwise_probe/pooler_swap.py` -> `layerwise_probe/results/pooler_swap_s42.csv`: base's layer 6 [CLS] features passed through each trained pooler, with the default probe:
+Pooler swap, from `experiments/layerwise_probe/pooler_swap.py` -> `experiments/layerwise_probe/results/pooler_swap_s42.csv`: base's layer 6 [CLS] features passed through each trained pooler, with the default probe:
 
 | Pooler weights (on base h6) | Feature SD / base | Row cosine to base output | F1 16D | F1 64D | F1 768D |
 |---|---:|---:|---:|---:|---:|
@@ -680,7 +682,7 @@ The trained pooler weights rotate the output a little (row cosine 0.93 to 0.95) 
 **What it means for where the Matryoshka loss acts.** The loss is applied to prefixes of z = tanh(W h6 + b), with W random and nearly frozen in effect. To make the first 16 or 64 coordinates of z useful, training has to reshape h6 so that the contrastive signal falls along the fixed random directions picked out by the first rows of W. That happens through small changes spread over the encoder (well under 3% per layer), which double h6's scale and, on this task, remove some sentiment information. Any "Matryoshka ordering" lives in this near-random basis, not in the hidden coordinates of h6. This supports the pooling concerns in [hypothesis.md](../hypothesis.md) (lines 68 and 372).
 
 **Caveats.**
-- **Both swap directions, three seeds.** *Updated 2026-11-05:* the reverse swap (`layerwise_probe/pooler_swap_reverse.py`) was added and run for all three seeds, so this caveat about having only one direction no longer applies. The two effects need not add up exactly, but here each direction on its own already accounts for the result.
+- **Both swap directions, three seeds.** *Updated 2026-11-05:* the reverse swap (`experiments/layerwise_probe/pooler_swap_reverse.py`) was added and run for all three seeds, so this caveat about having only one direction no longer applies. The two effects need not add up exactly, but here each direction on its own already accounts for the result.
 - **Weight change is not effect size.** Relative Frobenius change says how far parameters moved, not how much the function changed; the swaps are the functional evidence.
 - **Three training seeds.** The pooler randomness statistics are properties of the hub checkpoint and don't depend on the seed.
 
@@ -698,6 +700,6 @@ All items of the earlier "To do after seeds 1 and 2" list have been run for seed
 1. **Finding 1 checks that depend on the seed:** check 4 (`bootstrap.py`), check 6 (`probe_tuned.py`, now also saving full-size predictions and a full-size bootstrap; small sizes bootstrapped by `probe_tuned_bootstrap.py`), check 7 (`probe_knn.py`) and check 8 (`selection_probe.py`).
 2. **Finding 9:** `weight_drift.py`, `pooler_swap.py` and the new `pooler_swap_reverse.py`.
 3. **STS-B paired bootstrap:** the new `bootstrap_sts.py`, clean pairs, model minus base at (6,768) and along the pooler row.
-4. **Cross-seed summary:** the new `aggregate_seeds.py`, which writes `layerwise_probe/results/cross_seed_*.csv` and [CROSS_SEED.md](CROSS_SEED.md).
+4. **Cross-seed summary:** the new `aggregate_seeds.py`, which writes `experiments/layerwise_probe/results/cross_seed_*.csv` and [CROSS_SEED.md](CROSS_SEED.md).
 
 The trained models' feature folders were deleted afterwards to free disk space; `features/base` and all checkpoints are kept, and any trained folder can be regenerated with `extract_cls.py`. The KL-on runs remain seed 42 only, so the KL statements in Findings 5, 6 and 8 still rest on one seed.

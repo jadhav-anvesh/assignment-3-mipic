@@ -5,7 +5,7 @@ and compares the test predictions with results/{name}_preds.npz and the F1
 with results/{name}_grid.csv. Writes results/refit_check_{name}.csv.
 
 Example, from the repository root:
-    python layerwise_probe/refit_check.py --name base
+    python experiments/layerwise_probe/refit_check.py --name base
 """
 
 from __future__ import annotations
@@ -15,22 +15,22 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from layerwise_probe.probe_grid import DIMS, fit_one, prediction_key  # noqa: E402
-from layerwise_probe.probe_size import load_pooler  # noqa: E402
+from experiments.layerwise_probe.probe_grid import DIMS, fit_one, prediction_key  # noqa: E402
+from experiments.layerwise_probe.probe_size import load_pooler  # noqa: E402
 
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Refit the pooler row and compare with saved predictions.")
     parser.add_argument("--name", default="base")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features")
-    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "features")
+    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     args = parser.parse_args(argv)
 
     x_tr, y_tr, x_te, y_te = load_pooler(args.features_dir, args.name)

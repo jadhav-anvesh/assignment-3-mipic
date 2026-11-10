@@ -4,12 +4,12 @@
 #
 # Runs the unmodified run_experiments.py once per arm on a single GPU, with the
 # Kaggle-matching defaults (5 epochs, lr 2e-5, max length 256, batch 16).
-# Output goes to layerwise_probe/runs/seed<SEED>/.
+# Output goes to experiments/layerwise_probe/runs/seed<SEED>/.
 #
 # The SIA attention-KL term (Eq. 6) is pinned OFF with MIPIC_ATTENTION_KL=0, the
-# configuration of every run under layerwise_probe/runs/. The repository default is ON
+# configuration of every run under experiments/layerwise_probe/runs/. The repository default is ON
 # (as in the paper), so the pin keeps those runs reproducible. --attention-kl
-# trains with KL ON, only the SIA arms (mipic, mrl_sia), into layerwise_probe/runs_kl/.
+# trains with KL ON, only the SIA arms (mipic, mrl_sia), into experiments/layerwise_probe/runs_kl/.
 #
 # An arm is skipped if it already finished cleanly: best.pt exists AND its entry
 # is in tweeteval_results.json. The exit code alone is not trusted, because
@@ -20,7 +20,7 @@
 # resumed run could keep the wrong best.pt.
 #
 # Usage (from anywhere):
-#   bash layerwise_probe/train_all.sh [--seed N] [--python PYTHON] [--attention-kl] [--dry-run]
+#   bash experiments/layerwise_probe/train_all.sh [--seed N] [--python PYTHON] [--attention-kl] [--dry-run]
 set -euo pipefail
 
 SEED=42
@@ -38,9 +38,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ $ATTENTION_KL -eq 1 ]]; then
-    MODELS=(mipic mrl_sia); RUNS_REL="layerwise_probe/runs_kl"
+    MODELS=(mipic mrl_sia); RUNS_REL="experiments/layerwise_probe/runs_kl"
 else
-    MODELS=(mrl mrl_pic mipic mrl_sia); RUNS_REL="layerwise_probe/runs"
+    MODELS=(mrl mrl_pic mipic mrl_sia); RUNS_REL="experiments/layerwise_probe/runs"
 fi
 # Any of these left in the environment would change the run away from the
 # Kaggle-matching defaults, truncate it, or turn it into a smoke test.
@@ -48,7 +48,7 @@ CLEAR_VARS=(MIPIC_MAX_BATCHES MIPIC_SMOKE_FULL_PIPELINE MIPIC_EVAL_TRAIN_SAMPLES
             MIPIC_EVAL_TEST_SAMPLES MIPIC_EPOCHS MIPIC_LEARNING_RATE MIPIC_MAX_LENGTH
             MIPIC_BATCH_SIZE MIPIC_CHECKPOINT MIPIC_FRESH MIPIC_ATTENTION_KL LOCAL_RANK RANK WORLD_SIZE)
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT_REL="${RUNS_REL}/seed${SEED}"
 LOG_DIR="${REPO_ROOT}/${OUT_REL}/logs"
 SUMMARY="${LOG_DIR}/summary.txt"

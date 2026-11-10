@@ -10,8 +10,8 @@ the script reports how many test sentences appear there verbatim and can drop
 the affected pairs with --drop-overlap.
 
 Example, from the repository root:
-    python layerwise_probe/sts_eval.py --name base
-    python layerwise_probe/sts_eval.py --name base --drop-overlap
+    python experiments/layerwise_probe/sts_eval.py --name base
+    python experiments/layerwise_probe/sts_eval.py --name base --drop-overlap
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -30,9 +30,9 @@ import pandas as pd  # noqa: E402
 import torch  # noqa: E402
 from scipy.stats import spearmanr  # noqa: E402
 
-from layerwise_probe.extract_cls import extract_split  # noqa: E402
-from layerwise_probe.load_encoder import load_encoder  # noqa: E402
-from layerwise_probe.probe_grid import DIMS, PIC_CHECKPOINTS, ROWS  # noqa: E402
+from experiments.layerwise_probe.extract_cls import extract_split  # noqa: E402
+from experiments.layerwise_probe.load_encoder import load_encoder  # noqa: E402
+from experiments.layerwise_probe.probe_grid import DIMS, PIC_CHECKPOINTS, ROWS  # noqa: E402
 
 STSB_DATASET = "sentence-transformers/stsb"
 TRAIN_CORPUS_CSV = REPO_ROOT / "data" / "final_data.csv"
@@ -84,7 +84,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="STS-B Spearman for every (layer, width) prefix.")
     parser.add_argument("--name", required=True, help="Model name for the output file, e.g. base, mipic.")
     parser.add_argument("--checkpoint", type=Path, default=None, help="Omit for base TinyBERT.")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-length", type=int, default=256)
     parser.add_argument("--drop-overlap", action="store_true",

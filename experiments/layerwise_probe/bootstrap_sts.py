@@ -18,7 +18,7 @@ Spearman values are checked against results/{name}_sts{_clean}.csv.
 Outputs results/bootstrap_sts_{model}_vs_{reference}{_clean}.csv, in Spearman x 100.
 
 Example, from the repository root:
-    python layerwise_probe/bootstrap_sts.py --suffix _s1 --drop-overlap
+    python experiments/layerwise_probe/bootstrap_sts.py --suffix _s1 --drop-overlap
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -36,7 +36,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from scipy.stats import rankdata, spearmanr  # noqa: E402
 
-from layerwise_probe.probe_grid import DIMS  # noqa: E402
+from experiments.layerwise_probe.probe_grid import DIMS  # noqa: E402
 
 CELLS = [("pooler", d) for d in DIMS] + [(6, 768)]
 MODELS = ("mrl", "mrl_pic", "mipic", "mrl_sia")
@@ -55,9 +55,9 @@ def cosines(name: str, checkpoint: Optional[Path], drop_overlap: bool, results_d
         return {k: data[k] for k in data.files if k != "gold"}, data["gold"]
 
     import torch
-    from layerwise_probe.extract_cls import extract_split
-    from layerwise_probe.load_encoder import load_encoder
-    from layerwise_probe.sts_eval import find_overlap, load_stsb_test, prefix_cosine
+    from experiments.layerwise_probe.extract_cls import extract_split
+    from experiments.layerwise_probe.load_encoder import load_encoder
+    from experiments.layerwise_probe.sts_eval import find_overlap, load_stsb_test, prefix_cosine
 
     pairs = load_stsb_test()
     affected = find_overlap(pairs, results_dir)
@@ -99,14 +99,14 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--models", nargs="+", default=list(MODELS))
     parser.add_argument("--reference", default="base")
     parser.add_argument("--runs-dir", type=Path, default=None,
-                        help="Checkpoint folder; default layerwise_probe/runs/seed<N>/checkpoints from --suffix.")
+                        help="Checkpoint folder; default experiments/layerwise_probe/runs/seed<N>/checkpoints from --suffix.")
     parser.add_argument("--drop-overlap", action="store_true")
-    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--results-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     parser.add_argument("--n-resamples", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args(argv)
 
-    runs_dir = args.runs_dir or REPO_ROOT / "layerwise_probe" / "runs" / f"seed{args.suffix.lstrip('_s')}" / "checkpoints"
+    runs_dir = args.runs_dir or REPO_ROOT / "experiments" / "layerwise_probe" / "runs" / f"seed{args.suffix.lstrip('_s')}" / "checkpoints"
     ref_cos, gold = cosines(args.reference, None, args.drop_overlap, args.results_dir)
     check_observed(args.reference, ref_cos, gold, args.drop_overlap, args.results_dir)
 

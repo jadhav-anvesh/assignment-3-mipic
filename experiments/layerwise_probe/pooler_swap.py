@@ -9,11 +9,11 @@ probe_grid.fit_one, the same default probe as everywhere else.
 Features are recomputed in float64 on CPU and cast to float32, so the base row
 can differ from base_grid.csv (stored GPU features) by a few hundredths.
 
-Outputs layerwise_probe/results/pooler_swap_{tag}.csv (pooler_weights, dim, f1,
+Outputs experiments/layerwise_probe/results/pooler_swap_{tag}.csv (pooler_weights, dim, f1,
 feature_sd, sd_ratio_to_base, row_cosine_to_base, converged).
 
 Example, from the repository root:
-    python layerwise_probe/pooler_swap.py
+    python experiments/layerwise_probe/pooler_swap.py
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -31,8 +31,8 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from joblib import Parallel, delayed  # noqa: E402
 
-from layerwise_probe.load_encoder import load_encoder  # noqa: E402
-from layerwise_probe.probe_grid import fit_one  # noqa: E402
+from experiments.layerwise_probe.load_encoder import load_encoder  # noqa: E402
+from experiments.layerwise_probe.probe_grid import fit_one  # noqa: E402
 
 MODELS = ("mrl", "mrl_pic", "mipic", "mrl_sia")
 
@@ -46,12 +46,12 @@ def pool(encoder, h6: np.ndarray) -> np.ndarray:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Probe trained pooler weights on base layer 6 features.")
-    parser.add_argument("--runs-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "runs" / "seed42" / "checkpoints")
+    parser.add_argument("--runs-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "runs" / "seed42" / "checkpoints")
     parser.add_argument("--models", nargs="+", default=list(MODELS))
     parser.add_argument("--dims", nargs="+", type=int, default=[16, 64, 768])
     parser.add_argument("--tag", default="s42")
-    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "features" / "base")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--features-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "features" / "base")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     args = parser.parse_args(argv)
 
     f = args.features_dir

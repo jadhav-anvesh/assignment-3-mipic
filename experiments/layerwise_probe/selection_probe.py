@@ -11,7 +11,7 @@ Scores base, and each --checkpoint given as name=path, so a best.pt whose epoch
 is known can be compared with its logged score as a reproduction check.
 
 Example, from the repository root:
-    python layerwise_probe/selection_probe.py --checkpoint mrl_s42=layerwise_probe/runs/seed42/checkpoints/mrl/best.pt
+    python experiments/layerwise_probe/selection_probe.py --checkpoint mrl_s42=experiments/layerwise_probe/runs/seed42/checkpoints/mrl/best.pt
 """
 
 from __future__ import annotations
@@ -21,14 +21,14 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import pandas as pd  # noqa: E402
 
 from evaluate import MRLEvaluationConfig, validation_probe_score  # noqa: E402
-from layerwise_probe.load_encoder import load_encoder  # noqa: E402
+from experiments.layerwise_probe.load_encoder import load_encoder  # noqa: E402
 from losses.mrl_loss import MRL_NESTED_DIMS  # noqa: E402
 
 
@@ -36,7 +36,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="validation_probe_score for base and optional checkpoints.")
     parser.add_argument("--checkpoint", action="append", default=[], help="name=path to a trained checkpoint")
     parser.add_argument("--train-csv", type=Path, default=REPO_ROOT / "data" / "tweet_train.csv")
-    parser.add_argument("--out", type=Path, default=REPO_ROOT / "layerwise_probe" / "results" / "selection_probe_s42.csv")
+    parser.add_argument("--out", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results" / "selection_probe_s42.csv")
     args = parser.parse_args(argv)
 
     config = MRLEvaluationConfig(

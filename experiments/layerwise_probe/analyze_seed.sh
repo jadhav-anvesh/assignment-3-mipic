@@ -15,12 +15,12 @@
 # need the features (step 1); step 4 also needs step 2's grid.
 #
 # Usage (from anywhere):
-#   bash layerwise_probe/analyze_seed.sh [--seed N] [--runs-dir layerwise_probe/runs] [--dry-run]
+#   bash experiments/layerwise_probe/analyze_seed.sh [--seed N] [--runs-dir experiments/layerwise_probe/runs] [--dry-run]
 #                                  [--delete-features] [--python PYTHON]
 set -euo pipefail
 
 SEED=42
-RUNS_DIR="layerwise_probe/runs"
+RUNS_DIR="experiments/layerwise_probe/runs"
 DRY_RUN=0
 DELETE_FEATURES=0
 PYTHON=python
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 # Absolute: /path on Linux, or C:/path or C:\path under Git Bash on Windows.
 [[ "$RUNS_DIR" = /* || "$RUNS_DIR" =~ ^[A-Za-z]:[\\/] ]] || RUNS_DIR="${REPO_ROOT}/${RUNS_DIR}"
@@ -43,8 +43,8 @@ SEED_DIR="${RUNS_DIR}/seed${SEED}"
 CKPT_ROOT="${SEED_DIR}/checkpoints"
 LOG_DIR="${SEED_DIR}/logs"
 RESULTS_JSON="${SEED_DIR}/tweeteval_results.json"
-FEAT_ROOT="layerwise_probe/features"
-RES_ROOT="layerwise_probe/results"
+FEAT_ROOT="experiments/layerwise_probe/features"
+RES_ROOT="experiments/layerwise_probe/results"
 export PYTHONUTF8=1
 command -v "$PYTHON" >/dev/null || { echo "python not found: $PYTHON" >&2; exit 1; }
 
@@ -53,11 +53,11 @@ all_exist() { for p in "$@"; do [[ -e "$p" ]] || return 1; done; }
 # Sets STEP_ARGS to the python arguments of step $1, quoted safely (paths may contain spaces).
 step_args() {
     case "$1" in
-        1)  STEP_ARGS=(layerwise_probe/extract_cls.py --name "$name" --checkpoint "$ckpt") ;;
-        2)  STEP_ARGS=(layerwise_probe/probe_grid.py --name "$name" --check-readme) ;;
-        3)  STEP_ARGS=(layerwise_probe/sts_eval.py --name "$name" --checkpoint "$ckpt" --drop-overlap) ;;
-        3b) STEP_ARGS=(layerwise_probe/sts_eval.py --name "$name" --checkpoint "$ckpt") ;;
-        4)  STEP_ARGS=(layerwise_probe/subset_probe.py --name "$name" --n-random 20) ;;
+        1)  STEP_ARGS=(experiments/layerwise_probe/extract_cls.py --name "$name" --checkpoint "$ckpt") ;;
+        2)  STEP_ARGS=(experiments/layerwise_probe/probe_grid.py --name "$name" --check-readme) ;;
+        3)  STEP_ARGS=(experiments/layerwise_probe/sts_eval.py --name "$name" --checkpoint "$ckpt" --drop-overlap) ;;
+        3b) STEP_ARGS=(experiments/layerwise_probe/sts_eval.py --name "$name" --checkpoint "$ckpt") ;;
+        4)  STEP_ARGS=(experiments/layerwise_probe/subset_probe.py --name "$name" --n-random 20) ;;
     esac
 }
 

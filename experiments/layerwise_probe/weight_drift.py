@@ -11,10 +11,10 @@ parameters except the pooler ("encoder"), and everything ("all"). Biases that
 are exactly zero in base (the pooler bias) count in the norms like any other
 tensor; the relative change of the pooler is dominated by its weight.
 
-Outputs layerwise_probe/results/weight_drift_{tag}.csv.
+Outputs experiments/layerwise_probe/results/weight_drift_{tag}.csv.
 
 Example, from the repository root:
-    python layerwise_probe/weight_drift.py
+    python experiments/layerwise_probe/weight_drift.py
 """
 
 from __future__ import annotations
@@ -24,14 +24,14 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import pandas as pd  # noqa: E402
 import torch  # noqa: E402
 
-from layerwise_probe.load_encoder import load_encoder  # noqa: E402
+from experiments.layerwise_probe.load_encoder import load_encoder  # noqa: E402
 
 MODELS = ("mrl", "mrl_pic", "mipic", "mrl_sia")
 
@@ -64,11 +64,11 @@ def drift(base: dict, trained: dict, names: List[str]) -> dict:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Relative parameter change of trained encoders from base.")
-    parser.add_argument("--runs-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "runs" / "seed42" / "checkpoints")
+    parser.add_argument("--runs-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "runs" / "seed42" / "checkpoints")
     parser.add_argument("--models", nargs="+", default=list(MODELS))
     parser.add_argument("--checkpoint-name", default="best.pt")
     parser.add_argument("--tag", default="s42")
-    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "layerwise_probe" / "results")
+    parser.add_argument("--out-dir", type=Path, default=REPO_ROOT / "experiments" / "layerwise_probe" / "results")
     args = parser.parse_args(argv)
 
     base_model, _ = load_encoder(None, device="cpu")
