@@ -1,0 +1,260 @@
+% =====================================================================
+% Group report on MIPIC hypotheses: ACL template, first draft (2026-11-09).
+% Only the H1 section and its appendix are filled in. Every other section
+% is a placeholder for the teammate who owns it.
+%
+% Compile with the ACL style files (acl.sty, acl_natbib.bst) in this folder:
+%   https://github.com/acl-org/acl-style-files
+% Citations: h1_refs.bib (merge everyone's entries into one .bib).
+% Target length: about one page per hypothesis section.
+% =====================================================================
+
+\documentclass[11pt]{article}
+
+% Use [review] for an anonymous draft and [final] for the camera-ready version.
+\usepackage[final]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\title{Testing the Claims of MIPIC on TinyBERT: \\ Five Hypotheses}
+% TODO: title
+
+\author{
+  % TODO: team member names, roll numbers and e-mails
+  Author One \\ IIT Gandhinagar \\ \texttt{email@iitgn.ac.in} \And
+  Author Two \\ IIT Gandhinagar \\ \texttt{email@iitgn.ac.in}
+}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+% TODO: 4--6 sentences. Give what we test, how, and the main verdict of each hypothesis.
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+% TODO:
+% - MIPIC in two sentences: MRL plus SIA and PIC.
+% - The paper reports scores at each width but does not test the mechanisms it describes.
+% - We turn five of its claims into hypotheses with decision rules that we fix before we compute any results.
+% - List of contributions and a one-line verdict for each hypothesis.
+
+% =====================================================================
+\section{Shared Setup}
+\label{sec:setup}
+% TODO: write once; every hypothesis section refers here.
+% - Base model: TinyBERT-6L-768D \citep{jiao-etal-2020-tinybert}.
+% - Training: data/final_data.csv (20,240 sentences), 5 epochs, lr 2e-5, batch 16, max length 256.
+% - Variants: MRL, MRL+SIA, MRL+PIC, MIPIC; seeds 42, 1, 2; attention KL off; best.pt checkpoints.
+% - Untrained TinyBERT as the null model. Its pooler is random, so z is a random
+%   projection of the layer-6 [CLS] vector.
+% - Sentence embedding z = pooler_output; probes; bootstrap CIs.
+
+% =====================================================================
+\section{H1: Matryoshka prefixes are coarse-to-fine}
+\label{sec:h1}
+
+\paragraph{Hypothesis.}
+MIPIC \citep{mipic2026} builds on Matryoshka representation learning (MRL; \citealp{kusupati2022mrl}).
+The paper claims that the prefixes of the embedding are coarse-to-fine:
+``low-dimensional cores capture a coarse semantic skeleton, while higher-dimensional spaces progressively incorporate finer details'' (\S3.2.2).
+The paper reports only the score at each width, so this claim has not been tested.
+We define \emph{coarse} and \emph{fine} as two levels of one official label hierarchy on the same sentences, and test the sentence embedding $z$ (\texttt{pooler\_output}) in two parts:
+\textbf{H1-a}: the prefix $z_{[0:d]}$ holds more label information than $d$ random coordinates;
+\textbf{H1-b}: beyond what a random order gives, the prefix favours coarse labels over fine ones.
+
+\paragraph{Data.}
+\textbf{TREC} \citep{li-roth-2002-learning}: 5,452 training and 500 test questions, with 6 coarse and 50 fine answer types.
+\textbf{GoEmotions} \citep{demszky-etal-2020-goemotions}: Reddit comments with exactly one label (36,308 train, 4,590 test).
+We use the official mapping of the 28 emotions to 7 Ekman classes and then to 4 sentiment classes.
+This gives three nested levels.
+
+\paragraph{Models and probes.}
+We probe the four trained variants (MRL, MRL+SIA, MRL+PIC, MIPIC; 3 seeds each) and untrained TinyBERT \citep{jiao-etal-2020-tinybert}.
+The untrained pooler is a random projection, so its coordinates have no order.
+This makes untrained TinyBERT a null model, and every test must fail on it.
+For each width $d\in\{16,32\}$, we fit a logistic-regression probe on the first $d$ coordinates and report test macro-F1 $S(d)$.
+We compare the prefix with 10 random nested coordinate orders.
+A cosine $k$NN probe ($k{=}10$) checks that the results do not depend on the fitted classifier.
+
+\paragraph{Metrics.}
+$S(d)$ is the test macro-F1 of a probe on $d$ coordinates.
+$S_{\text{chance}}$ is the macro-F1 of a classifier that guesses each label at its training frequency.
+\begin{itemize}
+  \item \textbf{Retention}
+  \[
+    R(d)=\frac{S(d)-S_{\text{chance}}}{S(768)-S_{\text{chance}}}.
+  \]
+  $R{=}0$ means the $d$ coordinates are no better than chance, and $R{=}1$ means they are as good as all 768.
+  $R$ puts label levels with different chance scores (6 vs.\ 50 classes) on one scale.
+
+  \item \textbf{Prefix advantage (H1-a).}
+  \[
+    z(d)=\frac{S_{\text{prefix}}(d)-\overline{S}_{\text{rand}}(d)}{\sigma_{\text{rand}}(d)},
+  \]
+  where $\overline{S}_{\text{rand}}$ and $\sigma_{\text{rand}}$ are the mean and standard deviation over the 10 random orders.
+  $z$ is the distance of the prefix from the random orders in standard deviations.
+  H1-a holds if $z>2$ for MIPIC and $z\le 2$ for the untrained model.
+
+  \item \textbf{Coarse-to-fine index (H1-b).}
+  H1-b asks whether the first $d$ coordinates keep relatively more of the coarse information than of the fine information.
+  We test it in two steps, on the same test sentences for both label levels.
+
+  \emph{Step 1: the coarse bias of an order.}
+  For one coordinate order, we probe the first $d$ coordinates for the coarse labels and for the fine labels, and take the difference of the two retentions:
+  \[
+    \text{CFI}(d)=R_{\text{coarse}}(d)-R_{\text{fine}}(d).
+  \]
+  $\text{CFI}>0$ means the $d$ coordinates keep a larger share of the coarse information than of the fine information.
+
+  \emph{Step 2: compare with random orders.}
+  $\text{CFI}>0$ alone does not support H1: a coarse task is easier, so even $d$ random coordinates keep more of it.
+  We therefore compute CFI for each of the 10 random orders (each uses the same coordinates for both levels) and subtract their mean:
+  \[
+    \Delta\text{CFI}(d)=\text{CFI}_{\text{prefix}}(d)-\overline{\text{CFI}}_{\text{rand}}(d).
+  \]
+  For example, if the prefix has $\text{CFI}=0.40$ and the random orders have a mean of $0.30$, then $\Delta\text{CFI}=0.10$: the prefix favours coarse labels more than chance does.
+  If the prefix is better than random by the same amount on both levels, $\Delta\text{CFI}=0$: the prefix is better, but not \emph{coarse first}.
+
+  \emph{Pass rule.}
+  H1-b holds if $\Delta\text{CFI}>0$ for MIPIC and its 95\% CI excludes 0.
+  The untrained model has no order, so its $\Delta$CFI should be about 0.
+  We use one label pair for TREC (coarse--fine) and three for GoEmotions (sentiment--fine, Ekman--fine, sentiment--Ekman).
+  To see whether SIA and PIC add to the order that MRL already gives, we also test the paired difference $\Delta\text{CFI}_{\text{MIPIC}}-\Delta\text{CFI}_{\text{MRL}}$ for each seed.
+
+  \item \textbf{Uncertainty.}
+  95\% CIs come from a paired bootstrap over test sentences (1,000 resamples).
+  All models, orders and label levels use the same resamples.
+\end{itemize}
+We fixed all rules before we computed any results.
+A part passes only if it holds at $d\in\{16,32\}$, in all 3 seeds and on both datasets.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\multicolumn{5}{@{}l}{\emph{(a) H1-a: prefix vs.\ random, $z$ at $d{=}16$}} \\
+Data & Level & MIPIC $z$ & seeds$>$2 & Base $z$ \\
+\midrule
+TREC  & coarse    & 2.30 & 2/3 & 0.27 \\
+TREC  & fine      & 1.25 & 0/3 & $-$1.67 \\
+GoEmo & sentiment & 4.01 & 3/3 & 2.07 \\
+GoEmo & Ekman     & 3.18 & 3/3 & 0.42 \\
+GoEmo & fine      & 3.48 & 3/3 & $-$0.54 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{(b) H1-b: $\Delta$CFI at $d{=}16$ (seeds with CI$>$0)}} \\
+Pair & & MIPIC & MRL & Base \\
+\midrule
+TREC  & coarse--fine & +.063 (1/3) & +.026 (0/3) & +.066 \\
+GoEmo & sent.--fine  & +.106 (2/3) & +.119 (3/3) & +.084$^\dagger$ \\
+GoEmo & Ekman--fine  & +.063 (3/3) & +.065 (2/3) & +.030 \\
+\bottomrule
+\end{tabular}
+\caption{H1 at $d{=}16$ on \texttt{pooler\_output} (mean of 3 seeds; base is a single untrained model). $^\dagger$CI of the base model excludes 0. The results at $d{=}32$ are weaker for all cells; full tables are in Appendix~\ref{app:h1}.}
+\label{tab:h1}
+\end{table}
+
+\paragraph{Results.}
+Table~\ref{tab:h1} shows the main results.
+\textbf{H1-a holds only partly.}
+On GoEmotions at $d{=}16$, the MIPIC prefix is 3--4 standard deviations above the random orders in every seed (+0.03 to +0.07 macro-F1), and the $k$NN probe agrees.
+On TREC, it passes in at most 2 of 3 seeds.
+At $d{=}32$, the advantage shrinks on both datasets.
+All four trained variants show almost the same advantage, so the ordering comes from the MRL loss, not from SIA or PIC.
+\textbf{H1-b is not supported.}
+$\Delta$CFI passes in only 1 of the 8 pair--width cells (GoEmotions Ekman--fine, $d{=}16$).
+The untrained null model shows a $\Delta$CFI of similar size, and its CI excludes 0 in 5 of the 8 cells.
+A positive $\Delta$CFI therefore does not show a learned coarse-to-fine order.
+The paired difference $\Delta\text{CFI}_{\text{MIPIC}}-\Delta\text{CFI}_{\text{MRL}}$ is never reliably positive (1 of 24 seed cells), and it is negative on average in 7 of the 8 cells.
+\textbf{Side result.} At full width, untrained TinyBERT gives the highest probe F1 at every label level (e.g.\ TREC fine 0.70 vs.\ 0.57 for MIPIC).
+
+\paragraph{Takeaway.}
+The MRL prefix is ordered by usefulness for the training objective: on GoEmotions, the first 16 coordinates carry more information than random ones.
+But we find no evidence that these coordinates hold coarse information first.
+SIA and PIC add no further ordering.
+
+% =====================================================================
+\section{H2: Lower layers hold syntax, and PIC leaves it intact}
+\label{sec:h2}
+% TODO (owner: ...): Hypothesis / Data / Metrics / Results (one table) / Takeaway.
+
+% =====================================================================
+\section{H3: Early, small checkpoints become usable embeddings}
+\label{sec:h3}
+% TODO (owner: ...): Hypothesis / Data / Metrics / Results (one table) / Takeaway.
+
+% =====================================================================
+\section{H4: SIA is essential and SIA and PIC are synergistic}
+\label{sec:h4}
+% TODO (owner: ...): Hypothesis / Data / Metrics / Results (one table) / Takeaway.
+
+% =====================================================================
+\section{H5: The top-$k$ CKA loss is an informative training signal}
+\label{sec:h5}
+% TODO (owner: ...): Hypothesis / Data / Metrics / Results (one table) / Takeaway.
+
+% =====================================================================
+\section{Discussion}
+\label{sec:discussion}
+% TODO: what holds across hypotheses.
+% - Untrained TinyBERT is hard to beat on several probes (H1 side result, h11_probe Finding 1).
+% - The effects come from the MRL loss rather than from SIA or PIC (H1-a and any similar results in other sections).
+% - What this means for the paper's claims.
+
+% =====================================================================
+\section*{Limitations}
+% Required by ACL; does not count towards the page limit.
+% TODO: one bullet or short paragraph per point.
+% - TinyBERT-6L only, three seeds, attention KL off; not the original V20 code (KL on).
+% - The best.pt checkpoints are from epochs 1--3, not epoch 5.
+% - Other hypotheses: ...
+
+\paragraph{H1.}
+First, TREC has only 500 test questions, so the CIs on TREC are about $\pm$0.1 wide.
+Second, the untrained null model also shows a positive $\Delta$CFI, so the metric itself needs a check before strong conclusions.
+Third, we test one definition of coarse and fine (two levels of a label hierarchy); a different definition could give a different result.
+
+% =====================================================================
+\bibliography{h1_refs}
+
+% =====================================================================
+\appendix
+
+\section{H1: Full Results}
+\label{app:h1}
+% TODO:
+% - Full F1 table: arm x order (prefix / random / reverse / PCA) x d in {16, ..., 768}.
+% - H1-a per seed and per width (z, percentile), logistic regression and kNN.
+% - Delta-CFI per seed with 95% CIs, all four label pairs, d = 16 and 32.
+% - Plot: R(d) for coarse and fine, prefix vs. random band, one panel per variant.
+
+\section{H2: Full Results}
+\label{app:h2}
+% TODO
+
+\section{H3: Full Results}
+\label{app:h3}
+% TODO
+
+\section{H4: Full Results}
+\label{app:h4}
+% TODO
+
+\section{H5: Full Results}
+\label{app:h5}
+% TODO
+
+\end{document}
