@@ -1,0 +1,51 @@
+{
+  "score_rows": 840,
+  "contrast_rows": 90,
+  "seeds": [
+    1,
+    2,
+    3,
+    5,
+    42
+  ],
+  "kl_off_seeds": [
+    1,
+    2,
+    3,
+    5,
+    42
+  ],
+  "kl_on_seeds": [
+    1,
+    2,
+    3,
+    5,
+    42
+  ],
+  "datasets": [
+    "banking77",
+    "stsb",
+    "tweet"
+  ],
+  "models": [
+    "mrl",
+    "mrl_sia",
+    "mrl_pic",
+    "mipic"
+  ],
+  "dimensions": [
+    16,
+    32,
+    64,
+    128,
+    256,
+    512,
+    768
+  ],
+  "sources": {
+    "kl_off_existing": "../individual_results/kl_off_results_1_2_42/kl_off_scores.json",
+    "remaining_seeds": "../individual_results/results_3_5/scores.json",
+    "kl_on_1_2_42": "../individual_results/kl_on_results_1_2_42/scores.json"
+  },
+  "construction_note": "For KL-on, MRL and MRL+PIC are copied from corresponding KL-off scores because attention-KL applies only to MRL+SIA and MIPIC."
+}

@@ -1,0 +1,1010 @@
+[
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 16,
+    "score": 59.43787819916566
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 32,
+    "score": 62.57162010934189
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 64,
+    "score": 64.96408516750988
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 128,
+    "score": 66.46783619578703
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 256,
+    "score": 67.31209961070182
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 512,
+    "score": 68.54549770782788
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 768,
+    "score": 69.31468233903708
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 16,
+    "score": 17.887891587600187
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 32,
+    "score": 29.707030253864747
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 64,
+    "score": 40.20071517286447
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 128,
+    "score": 50.77282003595739
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 256,
+    "score": 60.120870677748236
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 512,
+    "score": 67.09161067077247
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 768,
+    "score": 70.93188806964716
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 16,
+    "score": 66.41736693975766
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 32,
+    "score": 69.3828840841191
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 64,
+    "score": 71.06115548324316
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 128,
+    "score": 72.18654667330392
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 256,
+    "score": 73.12879016605122
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 512,
+    "score": 73.41624642295484
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 768,
+    "score": 73.5325687008872
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 16,
+    "score": 57.42222752687803
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 32,
+    "score": 62.72755581470505
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 64,
+    "score": 64.29559716913857
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 128,
+    "score": 66.4150290703006
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 256,
+    "score": 67.02726009213075
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 512,
+    "score": 68.14802142581598
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 768,
+    "score": 69.04517319552077
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 16,
+    "score": 16.84182832314183
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 32,
+    "score": 28.07719272794495
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 64,
+    "score": 38.82062801637783
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 128,
+    "score": 47.40268454034281
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 256,
+    "score": 56.42710280543602
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 512,
+    "score": 63.54290230680777
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 768,
+    "score": 66.85327204463091
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 16,
+    "score": 62.98373530646586
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 32,
+    "score": 65.97862213007367
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 64,
+    "score": 67.38809717061336
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 128,
+    "score": 68.50108107252274
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 256,
+    "score": 69.81300305851273
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 512,
+    "score": 70.27016378640246
+  },
+  {
+    "seed": 1,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 768,
+    "score": 70.27469529709187
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 16,
+    "score": 61.21677303872107
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 32,
+    "score": 63.63020450610213
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 64,
+    "score": 65.51069598444121
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 128,
+    "score": 67.27497871003841
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 256,
+    "score": 68.44735633626149
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 512,
+    "score": 69.57922420763927
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 768,
+    "score": 70.00683366749281
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 16,
+    "score": 14.47408528194661
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 32,
+    "score": 23.994931359106612
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 64,
+    "score": 34.399285006840536
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 128,
+    "score": 44.083697442797174
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 256,
+    "score": 54.378621129771446
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 512,
+    "score": 63.21789892155613
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 768,
+    "score": 66.56220847806952
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 16,
+    "score": 62.21047081262079
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 32,
+    "score": 65.36735820873747
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 64,
+    "score": 67.81532371933332
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 128,
+    "score": 69.62421649994955
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 256,
+    "score": 70.79269816693147
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 512,
+    "score": 71.21592505355795
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 768,
+    "score": 71.32718635032221
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 16,
+    "score": 60.74113733229801
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 32,
+    "score": 63.753292502645174
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 64,
+    "score": 65.1991617995476
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 128,
+    "score": 66.79541629268151
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 256,
+    "score": 67.4857176895001
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 512,
+    "score": 69.03079837054466
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 768,
+    "score": 69.09197927565081
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 16,
+    "score": 15.9622571036286
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 32,
+    "score": 24.26327362103534
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 64,
+    "score": 34.388586494518975
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 128,
+    "score": 44.72484710572321
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 256,
+    "score": 52.84802279499278
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 512,
+    "score": 60.845492089646534
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 768,
+    "score": 65.02541626116552
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 16,
+    "score": 62.98812463201404
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 32,
+    "score": 65.31921705346998
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 64,
+    "score": 67.13711913500833
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 128,
+    "score": 68.54633922942696
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 256,
+    "score": 69.79758384877091
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 512,
+    "score": 70.08548351193808
+  },
+  {
+    "seed": 2,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 768,
+    "score": 70.0991925799605
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 16,
+    "score": 62.02290711879203
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 32,
+    "score": 63.990217190307405
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 64,
+    "score": 66.28215070595806
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 128,
+    "score": 67.55344790859282
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 256,
+    "score": 68.67120827326504
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 512,
+    "score": 70.00272493807822
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "tweet",
+    "dimension": 768,
+    "score": 70.34553718106352
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 16,
+    "score": 17.826319864039746
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 32,
+    "score": 24.563877445550606
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 64,
+    "score": 36.26739721073153
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 128,
+    "score": 48.39160020907114
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 256,
+    "score": 56.79055812713108
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 512,
+    "score": 64.85056512239512
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "banking77",
+    "dimension": 768,
+    "score": 68.94303202899613
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 16,
+    "score": 62.298770253159134
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 32,
+    "score": 66.59780576881407
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 64,
+    "score": 68.52239479604349
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 128,
+    "score": 70.07296419567753
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 256,
+    "score": 71.23810669492346
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 512,
+    "score": 71.67558728280315
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mrl_sia",
+    "dataset": "stsb",
+    "dimension": 768,
+    "score": 71.74956088543448
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 16,
+    "score": 59.70975835535781
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 32,
+    "score": 62.285922921994484
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 64,
+    "score": 63.418843328890375
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 128,
+    "score": 65.09104454041191
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 256,
+    "score": 66.1558459859085
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 512,
+    "score": 67.284797260631
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "tweet",
+    "dimension": 768,
+    "score": 68.0654958676351
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 16,
+    "score": 18.133413965302147
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 32,
+    "score": 25.088701255777075
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 64,
+    "score": 37.44830462560102
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 128,
+    "score": 49.22418467691073
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 256,
+    "score": 58.44634616824445
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 512,
+    "score": 65.61618414515884
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "banking77",
+    "dimension": 768,
+    "score": 69.15674273075119
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 16,
+    "score": 63.16477818508092
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 32,
+    "score": 65.26634557015242
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 64,
+    "score": 66.8606793284579
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 128,
+    "score": 68.18033929939705
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 256,
+    "score": 69.23070858584028
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 512,
+    "score": 69.76132151225752
+  },
+  {
+    "seed": 42,
+    "kl": "on",
+    "model": "mipic",
+    "dataset": "stsb",
+    "dimension": 768,
+    "score": 69.79001127480701
+  }
+]

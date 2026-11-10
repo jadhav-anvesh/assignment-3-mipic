@@ -320,7 +320,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                     checkpoint_dir = args.output_dir / f"seed{seed}" / "kl_off"
                 completed_checkpoint = checkpoint_dir / "checkpoints" / model_name / "model.pt"
                 if not args.skip_training:
-                    train_condition = args.kl_on_only and kl and model_name in {"mrl_sia", "mipic"}
+                    train_condition = not args.kl_off_only and (
+                        not args.kl_on_only or (kl and model_name in {"mrl_sia", "mipic"})
+                    )
                     if train_condition and (args.fresh or not completed_checkpoint.exists()):
                         _run_training(
                             model_name,
