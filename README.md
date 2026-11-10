@@ -30,7 +30,6 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 ├── HANDOFF.md                    # Start here: summary, results, how to reproduce, next steps
 ├── hypotheses.md                # The five selected hypotheses to test
 ├── MIPIC_TRAINING_README.md      # Record of the original Kaggle training run
-├── LEXIS_A1.pdf                  # Project report
 │
 ├── data/                         # Training corpus and tweet sentiment probe splits
 ├── models/                       # TinyBERT wrappers: MRL, MRL+SIA, MRL+PIC, MIPIC
