@@ -1,7 +1,7 @@
-"""Figures for H2, drawn from the tables analyze.py writes.
+"""Figures for the syntax-preservation experiment, drawn from the tables analyze.py writes.
 
-Reads H2/results/summary_cells.csv, bootstrap.csv and decisions.csv and writes
-three PNGs to H2/figures/:
+Reads experiments/syntax_preservation/results/summary_cells.csv, bootstrap.csv and decisions.csv and writes
+three PNGs to experiments/syntax_preservation/figures/:
 
     layer_profiles.png   POS accuracy and sentiment macro-F1 by layer, one line per
                          model (mean over training seeds, whiskers +-1 SD), in two
@@ -19,7 +19,7 @@ has its own marker shape and a direct label, so identity never rests on colour
 alone; RESULTS.md holds every plotted number as a table.
 
 Example, from the repository root (after analyze.py):
-    python H2/plots.py
+    python experiments/syntax_preservation/plots.py
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -40,9 +40,9 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from H2 import analyze, probe  # noqa: E402
+from experiments.syntax_preservation import analyze, probe  # noqa: E402
 
-DEFAULT_FIGURES_DIR = REPO_ROOT / "H2" / "figures"
+DEFAULT_FIGURES_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "figures"
 
 # Reference palette (light mode): chart chrome and categorical slots 1-4.
 SURFACE = "#fcfcfb"
@@ -297,7 +297,7 @@ def checkpoints(summary: pd.DataFrame, bootstrap: pd.DataFrame, decisions: pd.Da
 
 
 def main(argv: Optional[List[str]] = None) -> List[Path]:
-    parser = argparse.ArgumentParser(description="Draw the H2 figures from analyze.py's tables.")
+    parser = argparse.ArgumentParser(description="Draw the syntax-preservation figures from analyze.py's tables.")
     parser.add_argument("--results-dir", type=Path, default=analyze.DEFAULT_RESULTS_DIR)
     parser.add_argument("--figures-dir", type=Path, default=DEFAULT_FIGURES_DIR)
     args = parser.parse_args(argv)
@@ -306,7 +306,7 @@ def main(argv: Optional[List[str]] = None) -> List[Path]:
     for name in ("summary_cells", "bootstrap", "decisions"):
         path = args.results_dir / f"{name}.csv"
         if not path.exists():
-            raise FileNotFoundError(f"{path} not found; run python H2/analyze.py first")
+            raise FileNotFoundError(f"{path} not found; run python experiments/syntax_preservation/analyze.py first")
         try:
             tables[name] = pd.read_csv(path)
         except pd.errors.EmptyDataError:

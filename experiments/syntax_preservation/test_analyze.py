@@ -1,6 +1,6 @@
-"""Tests for the H2 analysis, on synthetic results with known effects.
+"""Tests for the syntax-preservation analysis, on synthetic results with known effects.
 
-Run from the repository root:  python -m pytest H2/test_analyze.py -q
+Run from the repository root:  python -m pytest experiments/syntax_preservation/test_analyze.py -q
 No model needed; runs in seconds.
 """
 
@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from H2 import analyze, probe  # noqa: E402
+from experiments.syntax_preservation import analyze, probe  # noqa: E402
 
 N_SENTENCES, WORDS_PER_SENTENCE, N_TWEETS = 300, 8, 1200
 POS_LABELS = np.random.default_rng(100).integers(0, 17, N_SENTENCES * WORDS_PER_SENTENCE).astype(np.int8)

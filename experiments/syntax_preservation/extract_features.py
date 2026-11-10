@@ -1,7 +1,7 @@
-"""Extract layer 0-6 features for the H2 probes: UD EWT word vectors and tweet [CLS] vectors.
+"""Extract layer 0-6 features for the syntax-preservation probes: UD EWT word vectors and tweet [CLS] vectors.
 
 For one encoder (base TinyBERT or a trained checkpoint) this writes, to
-H2/features/<name>/:
+experiments/syntax_preservation/features/<name>/:
 
     ud_{split}_layer{l}.npy     (n_words, 768) float32, the FIRST-SUBWORD vector of
                                 every UD word, hidden_states[l][:, i, :]
@@ -19,7 +19,7 @@ Design choices:
 - Memory stays flat. Each batch's vectors are copied straight into .npy files
   opened as memory maps; nothing keeps a reference to the batch tensors. (On CPU,
   a NumPy view of a slice pins the whole hidden-state tensor, which is how
-  h11_probe/extract_cls.py runs out of memory on a CPU-only machine.)
+  layerwise_probe/extract_cls.py runs out of memory on a CPU-only machine.)
 - Batches are formed after sorting sentences by token length, so little padding
   is computed. Padding positions are masked in attention, so the vectors match
   per-sentence encoding up to float rounding (checked by the tests).
@@ -29,13 +29,13 @@ Design choices:
 - No UD sentence is truncated: the run stops if one exceeds the model's 512
   positions. Words that the tokenizer maps to no subword at all are dropped
   together with their labels and counted in meta.json.
-- Tweets use the h11 settings (truncation at 256 tokens), so tweet [CLS] vectors
-  are the ones h11 probed.
+- Tweets use the layerwise_probe settings (truncation at 256 tokens), so tweet [CLS] vectors
+  are the ones layerwise_probe probed.
 
 Example, from the repository root:
-    python H2/extract_features.py --name base --limit 50          # quick smoke test
-    python H2/extract_features.py --name base
-    python H2/extract_features.py --name mipic_s42 \\
+    python experiments/syntax_preservation/extract_features.py --name base --limit 50          # quick smoke test
+    python experiments/syntax_preservation/extract_features.py --name base
+    python experiments/syntax_preservation/extract_features.py --name mipic_s42 \\
         --checkpoint MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed42/checkpoints/mipic/best.pt
 """
 
@@ -53,7 +53,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -61,7 +61,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import torch  # noqa: E402
 
-from H2 import ud_data  # noqa: E402
+from experiments.syntax_preservation import ud_data  # noqa: E402
 
 LAYERS: Tuple[int, ...] = (0, 1, 2, 3, 4, 5, 6)
 HIDDEN = 768
@@ -70,8 +70,8 @@ TWEET_SPLITS = {
     "train": REPO_ROOT / "data" / "tweet_train.csv",
     "test": REPO_ROOT / "data" / "tweet_test.csv",
 }
-TWEET_MAX_LENGTH = 256  # as in h11_probe/extract_cls.py and run_experiments.py
-DEFAULT_OUT_DIR = REPO_ROOT / "H2" / "features"
+TWEET_MAX_LENGTH = 256  # as in layerwise_probe/extract_cls.py and run_experiments.py
+DEFAULT_OUT_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "features"
 
 
 # ---------------------------------------------------------------------------
@@ -247,7 +247,7 @@ def read_tweets(csv_path: Path, limit: Optional[int]) -> Tuple[List[str], np.nda
         raise ValueError(f"{csv_path} must contain 'text' and 'label' columns.")
     if limit is not None:
         frame = frame.head(limit)
-    # Same casting as evaluate.ClassificationDataset and h11_probe/extract_cls.py.
+    # Same casting as evaluate.ClassificationDataset and layerwise_probe/extract_cls.py.
     return frame["text"].astype(str).tolist(), frame["label"].astype(np.int64).to_numpy()
 
 
@@ -286,7 +286,7 @@ def save_meta(path: Path, meta: dict) -> None:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    parser = argparse.ArgumentParser(description="Extract layer 0-6 UD word and tweet [CLS] features for H2.")
+    parser = argparse.ArgumentParser(description="Extract layer 0-6 UD word and tweet [CLS] features for the syntax-preservation experiment.")
     parser.add_argument("--name", required=True, help="Feature folder name, e.g. base or mipic_s42.")
     parser.add_argument("--checkpoint", type=Path, default=None, help="Omit for base TinyBERT.")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
@@ -298,7 +298,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--threads", type=int, default=None, help="torch CPU threads (default: torch's choice).")
     args = parser.parse_args(argv)
 
-    from layerwise_probe.load_encoder import load_encoder  # read-only reuse of the h11 loader
+    from layerwise_probe.load_encoder import load_encoder  # read-only reuse of the layerwise_probe loader
 
     if args.threads:
         torch.set_num_threads(args.threads)

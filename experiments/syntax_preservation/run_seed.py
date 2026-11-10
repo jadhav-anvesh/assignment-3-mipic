@@ -1,25 +1,25 @@
-"""Run the H2 pipeline (extract -> probe -> delete features) for every model of one or more seeds.
+"""Run the syntax-preservation pipeline (extract -> probe -> delete features) for every model of one or more seeds.
 
 Models are discovered as <checkpoints-root>/seed<N>/checkpoints/<model>/best.pt and
 processed in the order MRL, MRL+PIC, MIPIC, MRL+SIA (the first three are the ones
 the decision rules need). Each gets the name <model>_s<N>. For each model:
 
-    1. extract   python H2/extract_features.py --name <name> --checkpoint best.pt
-    2. probe     python H2/probe.py --name <name>
-    3. clean     delete H2/features/<name>/ (about 6 GB), unless --keep-features
+    1. extract   python experiments/syntax_preservation/extract_features.py --name <name> --checkpoint best.pt
+    2. probe     python experiments/syntax_preservation/probe.py --name <name>
+    3. clean     delete experiments/syntax_preservation/features/<name>/ (about 6 GB), unless --keep-features
 
 A model counts as done when results/<name>_probe.csv holds all 52 probes; done
 models are skipped, so rerunning the same command is safe. Both steps resume on
 their own, so an interrupted model continues where it stopped. A failed model is
 reported and the run moves on to the next one.
 
-Each model's full output goes to H2/logs/<name>.log (not tracked); the console
+Each model's full output goes to experiments/syntax_preservation/logs/<name>.log (not tracked); the console
 shows one line per step. --base runs the untrained backbone as "base" first.
 
 Example, from the repository root:
-    python H2/run_seed.py --seeds 42 --dry-run          # show the plan
-    python H2/run_seed.py --seeds 42 1 2                # everything, unattended
-    python H2/run_seed.py --seeds 42 --models mipic     # one model
+    python experiments/syntax_preservation/run_seed.py --seeds 42 --dry-run          # show the plan
+    python experiments/syntax_preservation/run_seed.py --seeds 42 1 2                # everything, unattended
+    python experiments/syntax_preservation/run_seed.py --seeds 42 --models mipic     # one model
 """
 
 from __future__ import annotations
@@ -35,17 +35,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import pandas as pd  # noqa: E402
 
-from H2 import probe  # noqa: E402
+from experiments.syntax_preservation import probe  # noqa: E402
 
 MODEL_ORDER = ("mrl", "mrl_pic", "mipic", "mrl_sia")
 DEFAULT_CHECKPOINTS_ROOT = REPO_ROOT / "MRL_LEXIS_H11_checkpoints" / "h11_probe" / "runs"
-DEFAULT_LOG_DIR = REPO_ROOT / "H2" / "logs"
+DEFAULT_LOG_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "logs"
 EXPECTED_PROBES = len(probe.probe_cells()) * (1 + len(probe.PROBE_SEEDS))  # 13 POS + 39 sentiment
 
 
@@ -80,13 +80,13 @@ def probes_done(results_dir: Path, name: str) -> bool:
 
 def step_commands(job: Job, args) -> List[tuple]:
     python = [sys.executable, "-u"]
-    extract = python + [str(REPO_ROOT / "H2" / "extract_features.py"), "--name", job.name,
+    extract = python + [str(REPO_ROOT / "experiments" / "syntax_preservation" / "extract_features.py"), "--name", job.name,
                         "--out-dir", str(args.features_dir)]
     if job.checkpoint is not None:
         extract += ["--checkpoint", str(job.checkpoint)]
     if args.limit is not None:
         extract += ["--limit", str(args.limit)]
-    run_probe = python + [str(REPO_ROOT / "H2" / "probe.py"), "--name", job.name,
+    run_probe = python + [str(REPO_ROOT / "experiments" / "syntax_preservation" / "probe.py"), "--name", job.name,
                           "--features-dir", str(args.features_dir), "--out-dir", str(args.results_dir)]
     if args.threads:
         extract += ["--threads", str(args.threads)]
@@ -149,7 +149,7 @@ def main(argv: Optional[List[str]] = None, runner: Callable[[List[str], Path], i
     parser.add_argument("--features-dir", type=Path, default=probe.DEFAULT_FEATURES_DIR)
     parser.add_argument("--results-dir", type=Path, default=probe.DEFAULT_OUT_DIR)
     parser.add_argument("--log-dir", type=Path, default=DEFAULT_LOG_DIR)
-    parser.add_argument("--keep-features", action="store_true", help="Keep H2/features/<name>/ after probing.")
+    parser.add_argument("--keep-features", action="store_true", help="Keep experiments/syntax_preservation/features/<name>/ after probing.")
     parser.add_argument("--threads", type=int, default=None, help="torch threads for both steps.")
     parser.add_argument("--limit", type=int, default=None,
                         help="Smoke test: extract only the first N sentences of each split. "

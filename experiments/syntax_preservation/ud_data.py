@@ -11,7 +11,7 @@ Parsing keeps only syntactic words, the lines whose ID is a plain integer:
 This is the standard word-level view used for UPOS and XPOS tagging.
 
 Example, from the repository root:
-    python H2/ud_data.py            # download if needed, print statistics
+    python experiments/syntax_preservation/ud_data.py            # download if needed, print statistics
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATA_DIR = REPO_ROOT / "H2" / "data" / "ud_ewt"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DATA_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "data" / "ud_ewt"
 
 UD_RELEASE = "r2.13"
 UD_URL = "https://raw.githubusercontent.com/UniversalDependencies/UD_English-EWT/{release}/{filename}"

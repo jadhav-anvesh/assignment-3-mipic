@@ -1,4 +1,4 @@
-# H2: Lower layers hold syntax, and PIC leaves it intact
+# Syntax preservation: lower layers hold syntax, and PIC leaves it intact
 
 This folder tests hypothesis 2 of the five hypotheses we selected for testing. The work is done in steps, one commit per step. This README records what each step does and why, and is updated as each step is finished.
 
@@ -10,7 +10,7 @@ The MIPIC paper (arXiv:2604.24374v1) motivates PIC with three statements it neve
 - §1, p.2: "PIC allows the remaining dimensions to continue modeling low level and general linguistic features."
 - §3.3, p.6: supervision is restricted to the prefix "while preserving low-level features and representational flexibility in the remaining space."
 
-PIC supervises only the [CLS] prefix at fixed (layer, width) checkpoints: `hidden_states[l][:, 0, :d]` for (1,16), (2,32), (3,64), (4,256), (5,512), (6,768) ([losses/pic_loss.py](../losses/pic_loss.py)). Because the encoder weights are shared, this also changes every token's representation, and the paper doesn't check what it does to them.
+PIC supervises only the [CLS] prefix at fixed (layer, width) checkpoints: `hidden_states[l][:, 0, :d]` for (1,16), (2,32), (3,64), (4,256), (5,512), (6,768) ([losses/pic_loss.py](../../losses/pic_loss.py)). Because the encoder weights are shared, this also changes every token's representation, and the paper doesn't check what it does to them.
 
 **Hypothesis.**
 - **(a)** In TinyBERT-6L, POS information peaks at a lower layer than sentiment information.
@@ -38,7 +38,7 @@ The paper's statement that PIC preserves low-level features holds for the early 
 
 ## Test design
 
-**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in [h11_probe/](../h11_probe/). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
+**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in the layer-wise probe experiment ([layerwise_probe/](../../layerwise_probe/), called h11 below). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
 
 **Tasks.**
 
@@ -47,7 +47,7 @@ The paper's statement that PIC preserves low-level features holds for the early 
 | POS (syntax) | UD English EWT r2.13, UPOS (17 tags) | First-subword vector of each word, `hidden_states[l][:, i, :]` | Accuracy |
 | Sentiment (task signal) | `data/tweet_train.csv`, `data/tweet_test.csv` (3 classes) | [CLS] vector, `hidden_states[l][:, 0, :]` | Macro-F1 |
 
-Layer l = 0 is the embedding output and l = 1…6 are the transformer layers. The sentiment files are the Kaggle Tweet Sentiment Extraction data used throughout this repository, not the official TweetEval benchmark (see the main [README](../README.md)); see decision 1 below for why.
+Layer l = 0 is the embedding output and l = 1…6 are the transformer layers. The sentiment files are the Kaggle Tweet Sentiment Extraction data used throughout this repository, not the official TweetEval benchmark (see the main [README](../../README.md)); see decision 1 below for why.
 
 **Splits.**
 
@@ -100,7 +100,7 @@ Why this form:
 Recorded before any trained-model results, so they can't be fitted to the outcome.
 
 1. **Sentiment data: the repository's tweet files, with a validation split carved from train**. The official TweetEval benchmark (`cardiffnlp/tweet_eval`) matches the paper's wording and has a real validation split, but it was not chosen:
-   - **Link to h11.** Rule (c) compares MIPIC's and MRL's sentiment prefixes. h11 found that PIC raises sentiment at (1,16) and (2,32) on exactly this data and these checkpoints (Finding 6). Keeping the data fixed means H2 can say whether that gain coexists with intact POS information, instead of comparing results from two datasets.
+   - **Link to h11.** Rule (c) compares MIPIC's and MRL's sentiment prefixes. h11 found that PIC raises sentiment at (1,16) and (2,32) on exactly this data and these checkpoints (Finding 6). Keeping the data fixed means this experiment can say whether that gain coexists with intact POS information, instead of comparing results from two datasets.
    - **Known overlap.** h11 already checked it: no test row is in the training corpus, and 3,000 training-corpus rows are in `tweet_train.csv`, which can only help the trained models. TweetEval would need its own overlap check, because all 3,000 rows of the corpus source labelled `TWEET_EVAL_SENT` are in the Kaggle `tweet_train.csv` (h11 `overlap_check.txt`), so the label doesn't say where they came from.
    - **Cost.** Sentiment numbers are not comparable with the paper's. This is true of the whole repository already.
    - Rules (a) and (b) are expected to come out the same on either dataset; only (c) depends on this choice.
@@ -129,7 +129,7 @@ Recorded before any trained-model results, so they can't be fitted to the outcom
 **Files.** [ud_data.py](ud_data.py), [test_ud_data.py](test_ud_data.py).
 
 **What it does.**
-- Downloads the three CoNLL-U files of UD English EWT, release **r2.13**, from the official GitHub repository into `H2/data/ud_ewt/`, which is not tracked in git.
+- Downloads the three CoNLL-U files of UD English EWT, release **r2.13**, from the official GitHub repository into `experiments/syntax_preservation/data/ud_ewt/`, which is not tracked in git.
 - Checks each file against a pinned SHA-256 hash, so every model and seed is probed on byte-identical data. A download is written to a temporary file and only renamed into place once its hash matches.
 - Parses each sentence into words with their UPOS and XPOS tags. It keeps one entry per syntactic word and skips the two kinds of CoNLL-U line that are not words:
   - multiword-token ranges such as `1-2 don't`, whose parts (`do`, `n't`) are listed as separate words;
@@ -149,29 +149,29 @@ The most frequent tag, NOUN, covers 16.5% of test words; that is the majority-cl
 **Run** (from the repository root):
 
 ```bash
-python H2/ud_data.py                    # download if needed, verify, print the table above
-python -m pytest H2/test_ud_data.py -q  # 6 passed (the real-data test is skipped until the download)
+python experiments/syntax_preservation/ud_data.py                    # download if needed, verify, print the table above
+python -m pytest experiments/syntax_preservation/test_ud_data.py -q  # 6 passed (the real-data test is skipped until the download)
 ```
 
 ### Step 2. Feature extraction
 
 **Files.** [extract_features.py](extract_features.py), [test_extract_features.py](test_extract_features.py).
 
-**What it does.** For one encoder (base TinyBERT, or a trained checkpoint loaded with `h11_probe/load_encoder.py`), it runs every sentence through the frozen model once and saves, for every layer l = 0…6:
+**What it does.** For one encoder (base TinyBERT, or a trained checkpoint loaded with `layerwise_probe/load_encoder.py`), it runs every sentence through the frozen model once and saves, for every layer l = 0…6:
 
 | Part | Rows | Vector saved per row | Labels saved |
 |---|---:|---|---|
 | `ud_train`, `ud_dev`, `ud_test` | one per UD word (204,577 / 25,149 / 25,094) | first subword of the word, `hidden_states[l][:, i, :]` | UPOS id, XPOS id, sentence index |
 | `tweet_train`, `tweet_test` | one per tweet (26,732 / 3,432) | [CLS], `hidden_states[l][:, 0, :]` | sentiment label |
 
-Files go to `H2/features/<name>/` as `{part}_layer{l}.npy` (float32, 768 columns), plus the label arrays and a `meta.json` with the settings, the checkpoint's SHA-256, row counts and timings. Rows are in the original data order.
+Files go to `experiments/syntax_preservation/features/<name>/` as `{part}_layer{l}.npy` (float32, 768 columns), plus the label arrays and a `meta.json` with the settings, the checkpoint's SHA-256, row counts and timings. Rows are in the original data order.
 
 **Choices and why.**
 - **First subword.** A word split into several subwords (e.g. "unbelievably" → `un`, `##bel`, …) is represented by its first subword, the usual convention for token-level probes. UD words are passed to the tokenizer pre-split (`is_split_into_words=True`), so word boundaries come from UD, not from the tokenizer.
 - **No truncation of UD sentences.** The longest one is 337 tokens, below the model's 512 positions; the script stops rather than truncate if that ever changes. Tweets keep h11's limit of 256 tokens (the longest tweet is 110), so tweet [CLS] vectors are the ones h11 probed.
 - **Words with no subword** (e.g. a lone zero-width space) are dropped together with their labels and counted in `meta.json`. UD EWT r2.13 has none.
 - **Length-sorted batches.** Sentences are grouped by token length, so little padding is computed: 1.8× faster than h11's data-order batching on the same 3,200 tweets (22 vs 12 tweets/s on CPU). Padding is masked in attention, and the tests check that every vector matches encoding its sentence alone (to 1e-4).
-- **Flat memory.** Vectors are copied straight into memory-mapped `.npy` files. This matters on CPU: there, `hidden_states[l][:, 0, :].cpu().numpy()` is a *view* that keeps the whole batch tensor alive, so code that keeps such views (as `h11_probe/extract_cls.py` does) grows by about 50 MB per batch until the machine runs out of memory and torch crashes. It is harmless on a GPU, where `.cpu()` copies.
+- **Flat memory.** Vectors are copied straight into memory-mapped `.npy` files. This matters on CPU: there, `hidden_states[l][:, 0, :].cpu().numpy()` is a *view* that keeps the whole batch tensor alive, so code that keeps such views (as `layerwise_probe/extract_cls.py` does) grows by about 50 MB per batch until the machine runs out of memory and torch crashes. It is harmless on a GPU, where `.cpu()` copies.
 - **Resumable.** Each part is written under `*.partial.npy` names and renamed when complete, and `meta.json` lists completed parts. A rerun skips them, so an interruption costs at most the part in progress. A rerun with different settings into the same folder is refused.
 
 **Cost per model** (CPU, 16-thread laptop): about 6.1 GB of features; about 20–35 minutes (tweets 22–40/s, UD 29–50 sentences/s, depending on machine load). The features can be deleted once the model is probed (step 4).
@@ -179,11 +179,11 @@ Files go to `H2/features/<name>/` as `{part}_layer{l}.npy` (float32, 768 columns
 **Run** (from the repository root):
 
 ```bash
-python H2/extract_features.py --name base --limit 50     # smoke test, seconds
-python H2/extract_features.py --name base                # full run
-python H2/extract_features.py --name mipic_s42 \
+python experiments/syntax_preservation/extract_features.py --name base --limit 50     # smoke test, seconds
+python experiments/syntax_preservation/extract_features.py --name base                # full run
+python experiments/syntax_preservation/extract_features.py --name mipic_s42 \
     --checkpoint MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed42/checkpoints/mipic/best.pt
-python -m pytest H2/ -q                                  # 14 passed, about a minute on CPU
+python -m pytest experiments/syntax_preservation/ -q                                  # 14 passed, about a minute on CPU
 ```
 
 ### Step 3. Probes
@@ -246,9 +246,9 @@ Each finished probe is saved in `features/<name>/probe_progress/`, so an interru
 **Run** (from the repository root; needs the model's features from step 2):
 
 ```bash
-python H2/probe.py --name base
-python H2/probe.py --name base --tasks sentiment   # one task only
-python -m pytest H2/ -q                            # 25 passed, about a minute on CPU
+python experiments/syntax_preservation/probe.py --name base
+python experiments/syntax_preservation/probe.py --name base --tasks sentiment   # one task only
+python -m pytest experiments/syntax_preservation/ -q                            # 25 passed, about a minute on CPU
 ```
 
 ### Step 4. Launcher
@@ -260,7 +260,7 @@ python -m pytest H2/ -q                            # 25 passed, about a minute o
 1. finds `MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed<N>/checkpoints/<model>/best.pt` for each seed, and stops before starting if a requested checkpoint is missing;
 2. for each model, named `<model>_s<N>` (e.g. `mipic_s42`), in the order MRL, MRL+PIC, MIPIC, MRL+SIA, so the three models the decision rules need are finished first: runs `extract_features.py`, then `probe.py`;
 3. deletes the model's features (about 6 GB) once its results are complete, so the disk never holds more than one model's features at a time;
-4. prints one line per step and a summary table; each model's full output goes to `H2/logs/<name>.log` (not tracked).
+4. prints one line per step and a summary table; each model's full output goes to `experiments/syntax_preservation/logs/<name>.log` (not tracked).
 
 **Choices and why.**
 - **One Python launcher instead of a `.sh` and a `.ps1` script.** It runs unchanged on Windows and Linux, so the logic isn't kept in two copies, and it avoids a Windows PowerShell 5.1 problem that the h11 launchers had to work around: PowerShell turns any line Python writes to stderr, such as a warning, into a fatal error.
@@ -275,12 +275,12 @@ python -m pytest H2/ -q                            # 25 passed, about a minute o
 **Run** (from the repository root):
 
 ```bash
-python H2/run_seed.py --seeds 42 1 2 --dry-run     # show the plan: 12 models, nothing run
-python H2/run_seed.py --seeds 42                   # one seed, 4 models
-python H2/run_seed.py --seeds 42 1 2               # all 12 trained models
-python H2/run_seed.py --seeds 42 --models mipic    # a single model
-python H2/run_seed.py --base                       # base; already done in step 3, so this only deletes its features
-python -m pytest H2/ -q                            # 32 passed, about a minute on CPU
+python experiments/syntax_preservation/run_seed.py --seeds 42 1 2 --dry-run     # show the plan: 12 models, nothing run
+python experiments/syntax_preservation/run_seed.py --seeds 42                   # one seed, 4 models
+python experiments/syntax_preservation/run_seed.py --seeds 42 1 2               # all 12 trained models
+python experiments/syntax_preservation/run_seed.py --seeds 42 --models mipic    # a single model
+python experiments/syntax_preservation/run_seed.py --base                       # base; already done in step 3, so this only deletes its features
+python -m pytest experiments/syntax_preservation/ -q                            # 32 passed, about a minute on CPU
 ```
 
 ### Step 5. Bootstrap, aggregation and decision rules
@@ -319,8 +319,8 @@ They also check that the macro-F1 used in the bootstrap equals scikit-learn's.
 **Run** (from the repository root; seconds to a minute):
 
 ```bash
-python H2/analyze.py                 # rerun whenever new results arrive
-python -m pytest H2/ -q              # 41 passed
+python experiments/syntax_preservation/analyze.py                 # rerun whenever new results arrive
+python -m pytest experiments/syntax_preservation/ -q              # 41 passed
 ```
 
 ### Step 6. Figures
@@ -347,17 +347,17 @@ python -m pytest H2/ -q              # 41 passed
 **Run** (from the repository root, after `analyze.py`):
 
 ```bash
-python H2/plots.py
-python -m pytest H2/ -q              # 45 passed
+python experiments/syntax_preservation/plots.py
+python -m pytest experiments/syntax_preservation/ -q              # 45 passed
 ```
 
 ### Step 7. Full run and findings
 
-**The run.** `python H2/run_seed.py --seeds 42 1 2` processed all 12 trained models without a failure: 52 probes each, plus base's 52 from step 3, 676 in all. The logs confirm that each model was read from its own seed's and arm's `best.pt`, and that each checkpoint loaded in the format of its arm. Then:
+**The run.** `python experiments/syntax_preservation/run_seed.py --seeds 42 1 2` processed all 12 trained models without a failure: 52 probes each, plus base's 52 from step 3, 676 in all. The logs confirm that each model was read from its own seed's and arm's `best.pt`, and that each checkpoint loaded in the format of its arm. Then:
 
 ```bash
-python H2/analyze.py   # results/summary_cells.csv, bootstrap.csv, decisions.csv and RESULTS.md
-python H2/plots.py     # figures/
+python experiments/syntax_preservation/analyze.py   # results/summary_cells.csv, bootstrap.csv, decisions.csv and RESULTS.md
+python experiments/syntax_preservation/plots.py     # figures/
 ```
 
 ![Layer profiles](figures/layer_profiles.png)
@@ -418,7 +418,7 @@ The decision rules count this as "MRL+PIC and MRL give the same profiles". It me
 ## Layout
 
 ```text
-H2/
+experiments/syntax_preservation/
 ├── README.md                 # This file
 ├── ud_data.py                # Step 1: UD EWT download, verification and parsing
 ├── test_ud_data.py           # Step 1: tests

@@ -1,6 +1,6 @@
-"""Tests for the H2 launcher, with a fake checkpoint tree and a stand-in for the two steps.
+"""Tests for the syntax-preservation launcher, with a fake checkpoint tree and a stand-in for the two steps.
 
-Run from the repository root:  python -m pytest H2/test_run_seed.py -q
+Run from the repository root:  python -m pytest experiments/syntax_preservation/test_run_seed.py -q
 No model needed; runs in seconds.
 """
 
@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from H2 import run_seed  # noqa: E402
+from experiments.syntax_preservation import run_seed  # noqa: E402
 
 
 @pytest.fixture

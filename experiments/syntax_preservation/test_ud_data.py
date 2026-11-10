@@ -1,8 +1,8 @@
 """Tests for the UD EWT loader.
 
-Run from the repository root:  python -m pytest H2/test_ud_data.py -q
+Run from the repository root:  python -m pytest experiments/syntax_preservation/test_ud_data.py -q
 The parser tests are offline. The last test checks the real files and is skipped
-when they have not been downloaded yet (python H2/ud_data.py does that).
+when they have not been downloaded yet (python experiments/syntax_preservation/ud_data.py does that).
 """
 
 from __future__ import annotations
@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from H2 import ud_data  # noqa: E402
+from experiments.syntax_preservation import ud_data  # noqa: E402
 
 SAMPLE = """\
 # sent_id = s1
@@ -67,7 +67,7 @@ def test_corrupt_file_is_rejected(tmp_path):
 
 @pytest.mark.skipif(
     not all((ud_data.DEFAULT_DATA_DIR / ud_data.split_filename(s)).exists() for s in ud_data.SPLITS),
-    reason="UD EWT not downloaded; run python H2/ud_data.py",
+    reason="UD EWT not downloaded; run python experiments/syntax_preservation/ud_data.py",
 )
 def test_real_files_match_pinned_release():
     data = ud_data.load_all()  # verifies hashes, counts and the UPOS inventory

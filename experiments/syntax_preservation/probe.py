@@ -1,6 +1,6 @@
-"""Fit the H2 linear probes on one model's features: POS and sentiment, by layer and coordinate block.
+"""Fit the syntax-preservation linear probes on one model's features: POS and sentiment, by layer and coordinate block.
 
-Reads H2/features/<name>/ (written by extract_features.py) and fits, per cell:
+Reads experiments/syntax_preservation/features/<name>/ (written by extract_features.py) and fits, per cell:
 
     Layer profiles      layers 0-6, all 768 coordinates             ("full")
     Prefix vs suffix    at the PIC checkpoints (1,16), (2,32), (3,64):
@@ -26,7 +26,7 @@ Every fit starts from zero.
 Fits run one at a time with a fixed number of torch threads (--threads, recorded
 in the output).
 
-Outputs, in H2/results/:
+Outputs, in experiments/syntax_preservation/results/:
     <name>_probe.csv   one row per (task, cell, probe seed): chosen C, validation
                        score, test accuracy and macro-F1, convergence
     <name>_cgrid.csv   validation score of every C, for every row above
@@ -34,12 +34,12 @@ Outputs, in H2/results/:
                        "<task>_L<layer>_<coords>_s<seed>", plus "pos_labels" and
                        "sentiment_labels"
 
-Progress is saved per cell in H2/features/<name>/probe_progress/, so an
+Progress is saved per cell in experiments/syntax_preservation/features/<name>/probe_progress/, so an
 interrupted run resumes where it stopped.
 
 Example, from the repository root:
-    python H2/probe.py --name base
-    python H2/probe.py --name base --tasks sentiment
+    python experiments/syntax_preservation/probe.py --name base
+    python experiments/syntax_preservation/probe.py --name base --tasks sentiment
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -67,10 +67,10 @@ C_GRID: Tuple[float, ...] = (0.001, 0.01, 0.1, 1.0, 10.0)
 PROBE_SEEDS: Tuple[int, ...] = (0, 1, 2)
 VAL_FRACTION = 0.1
 TASKS = ("pos", "sentiment")
-PROBE_MAX_ITER = 1000  # as in evaluate.py / h11_probe/probe_grid.py
+PROBE_MAX_ITER = 1000  # as in evaluate.py / layerwise_probe/probe_grid.py
 
-DEFAULT_FEATURES_DIR = REPO_ROOT / "H2" / "features"
-DEFAULT_OUT_DIR = REPO_ROOT / "H2" / "results"
+DEFAULT_FEATURES_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "features"
+DEFAULT_OUT_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "results"
 
 
 @dataclass(frozen=True)
@@ -315,7 +315,7 @@ def load_progress(folder: Path, key: str) -> Optional[Dict[str, object]]:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    parser = argparse.ArgumentParser(description="Fit the H2 POS and sentiment probes for one model.")
+    parser = argparse.ArgumentParser(description="Fit the syntax-preservation POS and sentiment probes for one model.")
     parser.add_argument("--name", required=True, help="Feature folder name, e.g. base or mipic_s42.")
     parser.add_argument("--tasks", nargs="+", choices=TASKS, default=list(TASKS))
     parser.add_argument("--features-dir", type=Path, default=DEFAULT_FEATURES_DIR)

@@ -30,10 +30,10 @@ checkpoints/
 wandb/
 tensorboard/
 layerwise_probe/features/
-# H2: downloaded UD EWT files and extracted features stay local; result tables are tracked.
-H2/data/
-H2/features/
-!H2/results/
+# H2 (experiments/syntax_preservation): downloaded UD EWT files and extracted features stay local; result tables are tracked.
+experiments/syntax_preservation/data/
+experiments/syntax_preservation/features/
+!experiments/syntax_preservation/results/
 # Run folders: only the per-seed result tables are tracked; checkpoints and logs stay local.
 !layerwise_probe/runs/
 !layerwise_probe/runs_kl/

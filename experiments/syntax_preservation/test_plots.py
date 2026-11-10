@@ -1,6 +1,6 @@
-"""Tests for the H2 figures: they render from analyze.py's tables, with all models or base alone.
+"""Tests for the syntax-preservation figures: they render from analyze.py's tables, with all models or base alone.
 
-Run from the repository root:  python -m pytest H2/test_plots.py -q
+Run from the repository root:  python -m pytest experiments/syntax_preservation/test_plots.py -q
 No model needed; uses the synthetic results of test_analyze.py.
 """
 
@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from H2 import analyze, plots  # noqa: E402
+from experiments.syntax_preservation import analyze, plots  # noqa: E402
 import test_analyze as synthetic  # noqa: E402
 
 FIGURES = ("layer_profiles.png", "seed_noise.png", "checkpoints.png")
@@ -52,5 +52,5 @@ def test_figures_render_with_base_only(tmp_path, monkeypatch):
 
 
 def test_missing_tables_are_reported(tmp_path):
-    with pytest.raises(FileNotFoundError, match="run python H2/analyze.py first"):
+    with pytest.raises(FileNotFoundError, match="run python experiments/syntax_preservation/analyze.py first"):
         plots.main(["--results-dir", str(tmp_path), "--figures-dir", str(tmp_path / "figures")])

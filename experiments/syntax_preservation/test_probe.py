@@ -1,6 +1,6 @@
-"""Tests for the H2 probes, on synthetic feature folders with known signal.
+"""Tests for the syntax-preservation probes, on synthetic feature folders with known signal.
 
-Run from the repository root:  python -m pytest H2/test_probe.py -q
+Run from the repository root:  python -m pytest experiments/syntax_preservation/test_probe.py -q
 No model or download needed; runs in seconds.
 """
 
@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from H2 import probe  # noqa: E402
+from experiments.syntax_preservation import probe  # noqa: E402
 
 SIZES = {"ud_train": 600, "ud_dev": 200, "ud_test": 200, "tweet_train": 600, "tweet_test": 200}
 PREFIX_SIGNAL = 3     # coordinate inside every checkpoint prefix [0:16]

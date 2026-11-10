@@ -1,8 +1,8 @@
-"""Tests for H2 feature extraction.
+"""Tests for the syntax-preservation feature extraction.
 
-Run from the repository root:  python -m pytest H2/test_extract_features.py -q
+Run from the repository root:  python -m pytest experiments/syntax_preservation/test_extract_features.py -q
 Needs the base TinyBERT weights (downloaded from Hugging Face on first use) and
-the UD EWT files (python H2/ud_data.py). Runs on CPU in about a minute.
+the UD EWT files (python experiments/syntax_preservation/ud_data.py). Runs on CPU in about a minute.
 """
 
 from __future__ import annotations
@@ -15,17 +15,17 @@ import numpy as np
 import pytest
 import torch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from H2 import extract_features as ef  # noqa: E402
-from H2 import ud_data  # noqa: E402
+from experiments.syntax_preservation import extract_features as ef  # noqa: E402
+from experiments.syntax_preservation import ud_data  # noqa: E402
 
 LIMIT = 8
 BATCH = 3  # several batches of unequal length, so padding and reordering are exercised
 
 needs_ud = pytest.mark.skipif(
     not all((ud_data.DEFAULT_DATA_DIR / ud_data.split_filename(s)).exists() for s in ud_data.SPLITS),
-    reason="UD EWT not downloaded; run python H2/ud_data.py",
+    reason="UD EWT not downloaded; run python experiments/syntax_preservation/ud_data.py",
 )
 
 
