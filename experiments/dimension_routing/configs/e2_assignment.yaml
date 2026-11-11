@@ -1,0 +1,47 @@
+experiment:
+  name: e2_assignment_sweep
+  dimension_mode: disjoint
+  include_auxiliary_permutations: true
+
+model:
+  name: tinybert_6l
+  embedding_dim: 768
+  max_length: 256
+
+data:
+  training_csv: data/final_data.csv
+
+training:
+  epochs: 1
+  learning_rate: 0.00002
+  warmup_ratio: 0.10
+  weight_decay: 0.01
+  temperature: 0.05
+  max_grad_norm: 1.0
+  examples_per_task_per_batch: 4
+  batch_size: 28
+  seeds:
+    - 42
+    - 123
+    - 456
+
+objective:
+  mode: query_masked
+  loss_reduction: mean
+
+dimensions:
+  # Seven equal-capacity blocks (Blocks 0-4: 110D, Blocks 5-6: 109D)
+  blocks:
+    - [0, 110]
+    - [110, 220]
+    - [220, 330]
+    - [330, 440]
+    - [440, 550]
+    - [550, 659]
+    - [659, 768]
+
+evaluation:
+  classification_metric: macro_f1
+  similarity_metric: spearman
+  evaluate_all_blocks: true
+  tune_c: false
