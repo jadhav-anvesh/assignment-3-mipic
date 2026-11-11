@@ -1,34 +1,119 @@
 % =====================================================================
 % H2: Lower layers hold syntax, and PIC leaves it intact (owner: ...)
 % Code and results: experiments/syntax_preservation/
-% Target: about one page. Use the same structure as sections/h1_coarse_to_fine.tex.
-% Put figures in figures/ and include them with \includegraphics{name}.
-% Add citations to refs.bib and cite them with \citep{key} or \citet{key}.
-% Put h2 in your labels (for example \label{tab:h2} or \label{fig:h2-layers}) so they do not clash.
 % =====================================================================
 \section{H2: Lower layers hold syntax, and PIC leaves it intact}
 \label{sec:h2}
 
 \paragraph{Hypothesis.}
-\textit{[What the paper claims and what exactly we test.]}
+PIC supervises only a prefix of the layer-$l$ [CLS] vector, $h_l[0{:}d]$, at fixed (layer, width) checkpoints: $(1,16)$, $(2,32)$, $(3,64)$, \dots, $(6,768)$.
+The paper motivates this with the finding that ``lower Transformer layers predominantly encode low level linguistic features such as syntax'', while ``higher layers increasingly capture task specific and discriminative signals'' (\S1; \citealp{jawahar-etal-2019-bert,liu-etal-2019-linguistic}).
+It also claims that PIC ``allows the remaining dimensions to continue modeling low level and general linguistic features'' (\S1).
+The paper measures neither statement, and the cited findings are for BERT-base and ELMo-style models, not for a 6-layer distilled encoder.
+We use part-of-speech (POS) tags as the low-level feature and sentiment as the task signal, and test three parts:
+\textbf{H2-a}: in untrained TinyBERT, POS information peaks at a lower layer than sentiment information;
+\textbf{H2-b}: MIPIC's layers 1--3 keep the POS information that MRL has;
+\textbf{H2-c}: at the PIC checkpoints, POS information sits outside the prefix, while MIPIC's sentiment gain sits inside it.
 
 \paragraph{Data.}
-\textit{[Datasets and splits.]}
+\textbf{POS}: Universal Dependencies English EWT, release 2.13 \citep{silveira-etal-2014-gold}: 12,544 / 2,001 / 2,077 train / dev / test sentences (204,577 / 25,149 / 25,094 words) with 17 UPOS tags.
+\textbf{Sentiment}: the three-class tweet data on which the variants are evaluated (26,732 train, 3,432 test).
+We hold out a stratified 10\% of the training tweets for validation.
 
 \paragraph{Models and probes.}
-\textit{[What is compared, and how.]}
+We probe untrained TinyBERT and the four trained variants (3 seeds each; Section~\ref{sec:setup}), frozen, at every layer $l=0,\dots,6$ ($l{=}0$ is the embedding output).
+POS uses the vector of each word's first subword, and sentiment uses the [CLS] vector.
+Each probe is a multinomial logistic regression on features standardized with training statistics.
+The L2 strength $C\in\{10^{-3},10^{-2},\dots,10\}$ is chosen on the validation data (UD dev, or the held-out tweets), and the chosen probe is scored on the test set.
+For each task we probe 13 cells: the \emph{layer profile} (all 768 coordinates, layers 0--6), and the \emph{prefix} $[0{:}d]$ and \emph{suffix} $[d{:}768]$ at $(1,16)$, $(2,32)$ and $(3,64)$.
+Sentiment probes are repeated over 3 validation splits and averaged.
+In total we fit 676 probes.
 
 \paragraph{Metrics.}
-\textit{[Each metric, with a two-line intuition of what it tells us.]}
+\begin{itemize}
+  \item \textbf{Probe score} $S$: POS accuracy on UD test, and sentiment macro-F1 on the test tweets.
+  \emph{Intuition:} how much of the task a linear classifier can read from the chosen coordinates.
+
+  \item \textbf{Peak layer}: the layer with the highest score over all 768 coordinates.
+  \emph{Intuition:} where in the network the information is easiest to read.
+
+  \item \textbf{Paired gap} $\Delta=S_{\text{model}}-S_{\text{MRL}}$, computed within each training seed, with a 95\% bootstrap CI (1,000 resamples of the test set).
+  For POS we resample whole sentences, because the words of one sentence are not independent.
+  \emph{Intuition:} what SIA or PIC add to plain MRL, or take away from it, with the training seed held fixed.
+
+  \item \textbf{Noise threshold}
+  \[
+    T=\max\left(2\sigma_{\text{MRL}},\,0.5\right),
+  \]
+  where $\sigma_{\text{MRL}}$ is the standard deviation of MRL's score over the 3 seeds.
+  \emph{Intuition:} a gap counts only if it is larger than normal run-to-run variation and large enough to matter; 0.5 accuracy points is about 125 of the 25,094 test words.
+\end{itemize}
 
 \paragraph{Decision rules.}
-\textit{[The pass/fail rules, fixed before any results.]}
+We fixed all rules before we computed any result for a trained model.
+\textbf{H2-a} holds if the POS peak layer of untrained TinyBERT is below its sentiment peak layer.
+\textbf{H2-b}: at each of layers 1--3, MIPIC \emph{damages} POS if the mean $\Delta$ over seeds is below $-T$ and every seed's CI is below 0; it is \emph{within noise} if $|\text{mean }\Delta|\le T$.
+H2-b holds if all three layers are within noise.
+\textbf{H2-c} holds at a checkpoint if MIPIC's POS(suffix) $\ge$ POS(prefix) in every seed, and MIPIC$-$MRL sentiment(prefix) has its CI above 0 in every seed.
+\textbf{Falsification check}: ``PIC leaves POS intact'' only means something if PIC changes the early layers.
+An effect of MRL+PIC$-$MRL needs $|\text{mean }\Delta|>T$ with the CIs of all seeds excluding 0 on the same side.
+If none of the 6 full-width cells (layers 1--3, both tasks) shows an effect, the hypothesis fails.
 
-% One table with the main results:
-% \begin{table}[t] ... \caption{...} \label{tab:h2} \end{table}
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\multicolumn{4}{@{}l}{\emph{(a) H2-a: peak layer of untrained TinyBERT}} \\
+POS accuracy       & \multicolumn{3}{l}{layer 4 (96.13)} \\
+Sentiment macro-F1 & \multicolumn{3}{l}{layer 6 (73.55)} \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{(b) Gap $\Delta$ to MRL, all 768 coordinates}} \\
+Layer                & 1        & 2                  & 3 \\
+\midrule
+MIPIC, POS (H2-b)    & +0.01    & $-$0.18            & $-$0.34 \\
+MRL+PIC, POS         & 0.00     & $-$0.17            & $-$0.40 \\
+MRL+PIC, sentiment   & $-$0.11  & $-$0.68$^\dagger$  & $-$0.56$^\dagger$ \\
+\midrule
+Layer                & 4                & 5                & 6 \\
+\midrule
+MIPIC, POS           & $-$0.66$^\ast$   & $-$1.19$^\ast$   & $-$2.24$^\ast$ \\
+MIPIC, sentiment     & $-$1.59$^\ast$   & $-$2.05$^\ast$   & $-$2.56$^\ast$ \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{(c) H2-c: at the PIC checkpoints}} \\
+Checkpoint                & (1,16)       & (2,32)       & (3,64) \\
+\midrule
+MIPIC POS, suffix$-$prefix & +36.4        & +31.4        & +24.7 \\
+MIPIC$-$MRL sent., prefix  & +6.1 (2/3)   & +5.0 (3/3)   & 0.0 (0/3) \\
+MIPIC$-$MRL POS, prefix    & +1.8         & $-$1.2       & $-$5.2$^\ast$ \\
+\bottomrule
+\end{tabular}
+\caption{H2 results (mean of 3 seeds; untrained TinyBERT is a single model). Gaps are in accuracy points (POS) or macro-F1 points (sentiment). $T{=}0.5$ for every cell in (b). $^\ast$The 95\% CI is below 0 in all 3 seeds. $^\dagger|\Delta|>T$, but the CI includes 0 in 2 or 3 seeds. (k/3): number of seeds whose CI is above 0.}
+\label{tab:h2}
+\end{table}
 
 \paragraph{Results.}
-\textit{[The main numbers and the verdict for each part.]}
+Table~\ref{tab:h2} shows the main results.
+\textbf{H2-a holds.}
+In untrained TinyBERT, POS peaks at layer 4 and sentiment at layer 6, and the POS peak comes first in 97\% of bootstrap resamples.
+POS forms a plateau over layers 2--4 (within 0.15 points).
+After training, the PIC-trained models keep the order but move both peaks down (POS to layer 2, sentiment to layer 3 or 4), while in MRL both peak at layer 4.
+\textbf{H2-b holds.}
+At layers 1--3, MIPIC is within 0.34 points of MRL, inside $T{=}0.5$.
+The gap at layer 3 is negative in every seed, but it is below the threshold.
+\textbf{The falsification check is met, so H2 fails by our rules.}
+MRL+PIC shows no effect at layers 1--3 in either task: its POS gaps are within $T$, and its two sentiment gaps beyond $T$ have CIs that include 0 in most seeds.
+PIC hardly changes the full-width early layers, so H2-b says little: there was almost nothing for PIC to damage there.
+PIC does act elsewhere.
+Past layer 3, the PIC-trained models lose both tasks: MIPIC is 0.7--2.2 POS points and 1.6--2.6 sentiment points below MRL at layers 4--6, with all 18 CIs below 0, and MRL+PIC shows a similar pattern.
+\textbf{H2-c holds at 1 of 3 checkpoints.}
+The POS part holds everywhere, but it also holds for untrained TinyBERT and MRL, because the suffix has 704--752 coordinates and the prefix only 16--64.
+The sentiment gain holds at $(2,32)$ in every seed (+4.6 to +5.9).
+It fails at $(1,16)$, where it is +13.5 and +5.1 in two seeds but absent in the third, and at $(3,64)$, where no seed gains.
+At $(3,64)$, MIPIC's prefix also holds 5.2 POS points less than MRL's, with every CI below 0.
 
 \paragraph{Takeaway.}
-\textit{[Two or three sentences.]}
+Syntax does peak before the task signal in TinyBERT, as the motivation for PIC says.
+But PIC does not so much preserve the early layers as leave them almost unchanged.
+Its real effects are a trade inside the small supervised prefix (more sentiment at $(2,32)$, less POS at $(3,64)$) and a loss of both POS and sentiment in layers 4--6.

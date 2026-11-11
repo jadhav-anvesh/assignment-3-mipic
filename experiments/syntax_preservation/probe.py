@@ -67,7 +67,7 @@ C_GRID: Tuple[float, ...] = (0.001, 0.01, 0.1, 1.0, 10.0)
 PROBE_SEEDS: Tuple[int, ...] = (0, 1, 2)
 VAL_FRACTION = 0.1
 TASKS = ("pos", "sentiment")
-PROBE_MAX_ITER = 1000  # as in evaluate.py / layerwise_probe/probe_grid.py
+PROBE_MAX_ITER = 1000  # as in evaluate.py / experiments/layerwise_probe/probe_grid.py
 
 DEFAULT_FEATURES_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "features"
 DEFAULT_OUT_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "results"

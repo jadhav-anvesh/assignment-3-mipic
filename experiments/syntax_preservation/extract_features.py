@@ -19,7 +19,7 @@ Design choices:
 - Memory stays flat. Each batch's vectors are copied straight into .npy files
   opened as memory maps; nothing keeps a reference to the batch tensors. (On CPU,
   a NumPy view of a slice pins the whole hidden-state tensor, which is how
-  layerwise_probe/extract_cls.py runs out of memory on a CPU-only machine.)
+  experiments/layerwise_probe/extract_cls.py runs out of memory on a CPU-only machine.)
 - Batches are formed after sorting sentences by token length, so little padding
   is computed. Padding positions are masked in attention, so the vectors match
   per-sentence encoding up to float rounding (checked by the tests).
@@ -70,7 +70,7 @@ TWEET_SPLITS = {
     "train": REPO_ROOT / "data" / "tweet_train.csv",
     "test": REPO_ROOT / "data" / "tweet_test.csv",
 }
-TWEET_MAX_LENGTH = 256  # as in layerwise_probe/extract_cls.py and run_experiments.py
+TWEET_MAX_LENGTH = 256  # as in experiments/layerwise_probe/extract_cls.py and run_experiments.py
 DEFAULT_OUT_DIR = REPO_ROOT / "experiments" / "syntax_preservation" / "features"
 
 
@@ -247,7 +247,7 @@ def read_tweets(csv_path: Path, limit: Optional[int]) -> Tuple[List[str], np.nda
         raise ValueError(f"{csv_path} must contain 'text' and 'label' columns.")
     if limit is not None:
         frame = frame.head(limit)
-    # Same casting as evaluate.ClassificationDataset and layerwise_probe/extract_cls.py.
+    # Same casting as evaluate.ClassificationDataset and experiments/layerwise_probe/extract_cls.py.
     return frame["text"].astype(str).tolist(), frame["label"].astype(np.int64).to_numpy()
 
 

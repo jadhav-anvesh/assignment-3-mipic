@@ -38,7 +38,7 @@ The paper's statement that PIC preserves low-level features holds for the early 
 
 ## Test design
 
-**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in the layer-wise probe experiment ([layerwise_probe/](../../layerwise_probe/), called h11 below). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
+**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in the layer-wise probe experiment ([layerwise_probe/](../layerwise_probe/), called h11 below). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
 
 **Tasks.**
 
@@ -157,7 +157,7 @@ python -m pytest experiments/syntax_preservation/test_ud_data.py -q  # 6 passed 
 
 **Files.** [extract_features.py](extract_features.py), [test_extract_features.py](test_extract_features.py).
 
-**What it does.** For one encoder (base TinyBERT, or a trained checkpoint loaded with `layerwise_probe/load_encoder.py`), it runs every sentence through the frozen model once and saves, for every layer l = 0…6:
+**What it does.** For one encoder (base TinyBERT, or a trained checkpoint loaded with `experiments/layerwise_probe/load_encoder.py`), it runs every sentence through the frozen model once and saves, for every layer l = 0…6:
 
 | Part | Rows | Vector saved per row | Labels saved |
 |---|---:|---|---|
@@ -171,7 +171,7 @@ Files go to `experiments/syntax_preservation/features/<name>/` as `{part}_layer{
 - **No truncation of UD sentences.** The longest one is 337 tokens, below the model's 512 positions; the script stops rather than truncate if that ever changes. Tweets keep h11's limit of 256 tokens (the longest tweet is 110), so tweet [CLS] vectors are the ones h11 probed.
 - **Words with no subword** (e.g. a lone zero-width space) are dropped together with their labels and counted in `meta.json`. UD EWT r2.13 has none.
 - **Length-sorted batches.** Sentences are grouped by token length, so little padding is computed: 1.8× faster than h11's data-order batching on the same 3,200 tweets (22 vs 12 tweets/s on CPU). Padding is masked in attention, and the tests check that every vector matches encoding its sentence alone (to 1e-4).
-- **Flat memory.** Vectors are copied straight into memory-mapped `.npy` files. This matters on CPU: there, `hidden_states[l][:, 0, :].cpu().numpy()` is a *view* that keeps the whole batch tensor alive, so code that keeps such views (as `layerwise_probe/extract_cls.py` does) grows by about 50 MB per batch until the machine runs out of memory and torch crashes. It is harmless on a GPU, where `.cpu()` copies.
+- **Flat memory.** Vectors are copied straight into memory-mapped `.npy` files. This matters on CPU: there, `hidden_states[l][:, 0, :].cpu().numpy()` is a *view* that keeps the whole batch tensor alive, so code that keeps such views (as `experiments/layerwise_probe/extract_cls.py` does) grows by about 50 MB per batch until the machine runs out of memory and torch crashes. It is harmless on a GPU, where `.cpu()` copies.
 - **Resumable.** Each part is written under `*.partial.npy` names and renamed when complete, and `meta.json` lists completed parts. A rerun skips them, so an interruption costs at most the part in progress. A rerun with different settings into the same folder is refused.
 
 **Cost per model** (CPU, 16-thread laptop): about 6.1 GB of features; about 20–35 minutes (tweets 22–40/s, UD 29–50 sentences/s, depending on machine load). The features can be deleted once the model is probed (step 4).
