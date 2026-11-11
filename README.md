@@ -31,14 +31,10 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 ├── data/                         # Training corpus and tweet sentiment probe splits
 ├── models/                       # TinyBERT wrappers: MRL, MRL+SIA, MRL+PIC, MIPIC
 ├── losses/                       # MRL, SIA and PIC losses, distributed helpers
-├── mipic/                        # Package marker
 ├── train.py                      # Training routines
 ├── evaluate.py                   # Logistic-regression probe evaluation
 ├── run_experiments.py            # Main experiment runner (MIPIC_* environment variables)
 ├── prepare_training_corpus.py    # Builds data/final_data.csv
-├── sanity_check.py               # Basic environment and model checks
-├── tensor_traces.py              # Shape and gradient diagnostics
-├── diagnose_hang.py              # DDP hang diagnostics
 ├── tests/                        # Unit, integration, protocol and attention-KL switch tests
 │
 ├── kaggle/
