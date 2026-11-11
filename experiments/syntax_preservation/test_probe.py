@@ -125,7 +125,7 @@ def test_fit_and_select_prefers_best_validation_c():
 
 @pytest.fixture(scope="module")
 def probed(tmp_path_factory):
-    root = tmp_path_factory.mktemp("h2")
+    root = tmp_path_factory.mktemp("syntax_preservation")
     make_features(root / "features" / "toy")
     args = ["--name", "toy", "--features-dir", str(root / "features"), "--out-dir", str(root / "results"),
             "--threads", "1"]

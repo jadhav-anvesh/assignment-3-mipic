@@ -1,6 +1,6 @@
 # Syntax preservation: lower layers hold syntax, and PIC leaves it intact
 
-This folder tests hypothesis 2 of the five hypotheses we selected for testing. The work is done in steps, one commit per step. This README records what each step does and why, and is updated as each step is finished.
+This folder tests the MIPIC paper's claim in the title: that lower Transformer layers hold syntax, and that PIC leaves it intact. The work is done in steps, one commit per step. This README records what each step does and why, and is updated as each step is finished.
 
 ## The claim being tested
 
@@ -38,7 +38,7 @@ The paper's statement that PIC preserves low-level features holds for the early 
 
 ## Test design
 
-**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in the layer-wise probe experiment ([layerwise_probe/](../layerwise_probe/), called h11 below). Using the same models links the two results: h11 found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
+**Models.** Base TinyBERT-6L (`huawei-noah/TinyBERT_General_6L_768D`, no training), MRL, MRL+PIC and MIPIC. MRL+SIA is probed too, for completeness; the decision rules don't use it. The trained models are the `best.pt` checkpoints from `run_experiments.py` for training seeds 42, 1 and 2, the same models probed for sentiment in [layerwise_probe](../layerwise_probe/). Using the same models links the two results: layerwise_probe found that PIC adds sentiment signal at (1,16) and (2,32), and this test asks whether that gain coexists with intact POS information.
 
 **Tasks.**
 
@@ -56,7 +56,7 @@ Layer l = 0 is the embedding output and l = 1…6 are the transformer layers. Th
 | POS | UD EWT train (204,577 words) | UD EWT dev (25,149 words) | UD EWT test (25,094 words) |
 | Sentiment | 90% of `tweet_train.csv` (stratified) | the other 10% (about 2,670 rows) | `tweet_test.csv` (3,432 rows), unchanged |
 
-**Probes.** Multinomial logistic regression on frozen features, standardized with the statistics of the fitting split. The regularization strength C is chosen on the validation split from the fixed grid {0.001, 0.01, 0.1, 1, 10} (accuracy for POS, macro-F1 for sentiment; ties go to the smaller C), and the chosen model is scored on the test split. The objective is that of `evaluate.py`'s `LogisticRegression` (lbfgs, L2, at most 1,000 iterations), solved with full-batch L-BFGS in PyTorch (step 3 explains why). The standardization and the tuned C fix a bias found in h11 (Finding 1, checks 5 and 6): `evaluate.py`'s fixed, unscaled probe (C = 1) favours models whose features are larger in scale, and the trained models' features are about twice base's.
+**Probes.** Multinomial logistic regression on frozen features, standardized with the statistics of the fitting split. The regularization strength C is chosen on the validation split from the fixed grid {0.001, 0.01, 0.1, 1, 10} (accuracy for POS, macro-F1 for sentiment; ties go to the smaller C), and the chosen model is scored on the test split. The objective is that of `evaluate.py`'s `LogisticRegression` (lbfgs, L2, at most 1,000 iterations), solved with full-batch L-BFGS in PyTorch (step 3 explains why). The standardization and the tuned C remove a bias of `evaluate.py`'s fixed, unscaled probe (C = 1): with one fixed C, features of larger scale are effectively regularized less, so that probe favours models whose features are larger, and the trained models' pooler features are about twice the scale of base's.
 
 **Probe seeds.** Logistic regression is convex and the solver is deterministic, so refitting the same POS probe gives the same answer; POS gets one fit per cell. For sentiment, the probe seed sets the 90/10 validation split: 3 probe seeds (0, 1, 2) per cell, with the score averaged over them.
 
@@ -100,14 +100,14 @@ Why this form:
 Recorded before any trained-model results, so they can't be fitted to the outcome.
 
 1. **Sentiment data: the repository's tweet files, with a validation split carved from train**. The official TweetEval benchmark (`cardiffnlp/tweet_eval`) matches the paper's wording and has a real validation split, but it was not chosen:
-   - **Link to h11.** Rule (c) compares MIPIC's and MRL's sentiment prefixes. h11 found that PIC raises sentiment at (1,16) and (2,32) on exactly this data and these checkpoints (Finding 6). Keeping the data fixed means this experiment can say whether that gain coexists with intact POS information, instead of comparing results from two datasets.
-   - **Known overlap.** h11 already checked it ([FINDINGS.md](../layerwise_probe/FINDINGS.md), Finding 1, check 3): no test row is in the training corpus, and 3,000 training-corpus rows are in `tweet_train.csv` (11.2% of it), which can only help the trained models. TweetEval would need its own overlap check, because all 3,000 rows of the corpus source labelled `TWEET_EVAL_SENT` are in the Kaggle `tweet_train.csv`, so the label doesn't say where they came from.
+   - **Link to layerwise_probe.** Rule (c) compares MIPIC's and MRL's sentiment prefixes. layerwise_probe found that PIC raises sentiment at (1,16) and (2,32) on exactly this data and these checkpoints (Finding 6). Keeping the data fixed means this experiment can say whether that gain coexists with intact POS information, instead of comparing results from two datasets.
+   - **Known overlap.** layerwise_probe already checked it ([FINDINGS.md](../layerwise_probe/FINDINGS.md), Finding 1, check 3): no test row is in the training corpus, and 3,000 training-corpus rows are in `tweet_train.csv` (11.2% of it), which can only help the trained models. TweetEval would need its own overlap check, because all 3,000 rows of the corpus source labelled `TWEET_EVAL_SENT` are in the Kaggle `tweet_train.csv`, so the label doesn't say where they came from.
    - **Cost.** Sentiment numbers are not comparable with the paper's. This is true of the whole repository already.
    - Rules (a) and (b) are expected to come out the same on either dataset; only (c) depends on this choice.
 2. **Seed noise: T = max(2σ, 0.5 points), σ from MRL, consistent CIs in all 3 seeds**. The full rule and its reasons are under "Seed noise: the operational rule" above.
-3. **Trained models: the existing `best.pt` checkpoints for seeds 42, 1 and 2**, the same ones h11 probed, rather than new training runs. They come from the unmodified `run_experiments.py`, so they are ordinary trained models; reusing them saves about 4.5 GPU hours and keeps the link to h11's results.
+3. **Trained models: the existing `best.pt` checkpoints for seeds 42, 1 and 2**, the same ones layerwise_probe probed, rather than new training runs. They come from the unmodified `run_experiments.py`, so they are ordinary trained models; reusing them saves about 4.5 GPU hours and keeps the link to layerwise_probe's results.
    - **Location:** `MRL_LEXIS_H11_checkpoints/h11_probe/runs/seed{42,1,2}/checkpoints/{mrl,mrl_pic,mipic,mrl_sia}/best.pt` (not tracked in git). `best.pt` is the epoch chosen during training; `model.pt` beside it is the last epoch and is not used.
-   - **Verified:** all 12 load strictly and differ from base. MIPIC seed 42, re-extracted here, reproduces h11's saved test predictions at (layer 1, 16D) and the pooler at 768D, with 18 and 15 of 3,432 predictions different (54.50 vs 54.65 and 67.72 vs 67.77 macro-F1). The small differences come from CPU vs GPU arithmetic and scikit-learn 1.5.1 vs 1.9.0; the other seeds' MIPIC and seed 42's MRL and MRL+PIC score 10 to 20 points away at (1,16).
+   - **Verified:** all 12 load strictly and differ from base. MIPIC seed 42, re-extracted here, reproduces layerwise_probe's saved test predictions at (layer 1, 16D) and the pooler at 768D, with 18 and 15 of 3,432 predictions different (54.50 vs 54.65 and 67.72 vs 67.77 macro-F1). The small differences come from CPU vs GPU arithmetic and scikit-learn 1.5.1 vs 1.9.0; the other seeds' MIPIC and seed 42's MRL and MRL+PIC score 10 to 20 points away at (1,16).
 4. **Rule (c) and the bootstrap made concrete before any trained-model result.** The original wording of rule (c) named no statistical test, so the version under "Decision rules" fixes one in the style of the seed-noise rule: a direction that must hold in every seed, with the paired CI for the sentiment gain. The bootstrap resamples UD test sentences rather than words, for the reason under "Statistics".
 
 **Expected sanity check.** At layer 0, [CLS] is the same vector for every sentence (the [CLS] token embedding plus position 0, then LayerNorm), so sentiment at layer 0 should be at chance. POS at layer 0 is a non-contextual word-embedding probe and should already be high.
@@ -168,9 +168,9 @@ Files go to `experiments/syntax_preservation/features/<name>/` as `{part}_layer{
 
 **Choices and why.**
 - **First subword.** A word split into several subwords (e.g. "unbelievably" → `un`, `##bel`, …) is represented by its first subword, the usual convention for token-level probes. UD words are passed to the tokenizer pre-split (`is_split_into_words=True`), so word boundaries come from UD, not from the tokenizer.
-- **No truncation of UD sentences.** The longest one is 337 tokens, below the model's 512 positions; the script stops rather than truncate if that ever changes. Tweets keep h11's limit of 256 tokens (the longest tweet is 110), so tweet [CLS] vectors are the ones h11 probed.
+- **No truncation of UD sentences.** The longest one is 337 tokens, below the model's 512 positions; the script stops rather than truncate if that ever changes. Tweets keep layerwise_probe's limit of 256 tokens (the longest tweet is 110), so tweet [CLS] vectors are the ones layerwise_probe probed.
 - **Words with no subword** (e.g. a lone zero-width space) are dropped together with their labels and counted in `meta.json`. UD EWT r2.13 has none.
-- **Length-sorted batches.** Sentences are grouped by token length, so little padding is computed: 1.8× faster than h11's data-order batching on the same 3,200 tweets (22 vs 12 tweets/s on CPU). Padding is masked in attention, and the tests check that every vector matches encoding its sentence alone (to 1e-4).
+- **Length-sorted batches.** Sentences are grouped by token length, so little padding is computed: 1.8× faster than layerwise_probe's data-order batching on the same 3,200 tweets (22 vs 12 tweets/s on CPU). Padding is masked in attention, and the tests check that every vector matches encoding its sentence alone (to 1e-4).
 - **Flat memory.** Vectors are copied straight into memory-mapped `.npy` files. This matters on CPU: there, `hidden_states[l][:, 0, :].cpu().numpy()` is a *view* that keeps the whole batch tensor alive, so code that keeps such views (as `experiments/layerwise_probe/extract_cls.py` does) grows by about 50 MB per batch until the machine runs out of memory and torch crashes. It is harmless on a GPU, where `.cpu()` copies.
 - **Resumable.** Each part is written under `*.partial.npy` names and renamed when complete, and `meta.json` lists completed parts. A rerun skips them, so an interruption costs at most the part in progress. A rerun with different settings into the same folder is refused.
 
@@ -263,7 +263,7 @@ python -m pytest experiments/syntax_preservation/ -q                            
 4. prints one line per step and a summary table; each model's full output goes to `experiments/syntax_preservation/logs/<name>.log` (not tracked).
 
 **Choices and why.**
-- **One Python launcher instead of a `.sh` and a `.ps1` script.** It runs unchanged on Windows and Linux, so the logic isn't kept in two copies, and it avoids a Windows PowerShell 5.1 problem that the h11 launchers had to work around: PowerShell turns any line Python writes to stderr, such as a warning, into a fatal error.
+- **One Python launcher instead of a `.sh` and a `.ps1` script.** It runs unchanged on Windows and Linux, so the logic isn't kept in two copies, and it avoids a Windows PowerShell 5.1 problem that the layerwise_probe launchers had to work around: PowerShell turns any line Python writes to stderr, such as a warning, into a fatal error.
 - **Safe to rerun.** A model counts as done only when its results hold all 52 probes and its predictions file exists; done models are skipped. Steps 2 and 3 each resume on their own, so an interrupted model continues where it stopped. Rerunning the same command after any interruption is always correct.
 - **A failure doesn't stop the run.** A failed step is reported with its exit code and log file, the model's later steps are skipped, and the next model starts. The summary lists the failures and the command exits with code 1.
 - **Smoke tests stay separate.** `--limit N` extracts only the first N sentences of each split, and is refused unless results go to a different `--results-dir`, so a smoke test can't overwrite real results.
@@ -398,7 +398,7 @@ The decision rules count this as "MRL+PIC and MRL give the same profiles". It me
   | (2,32) | +5.92 [+4.05, +7.82] | +4.56 [+2.77, +6.32] | +4.62 [+2.80, +6.42] | holds |
   | (3,64) | −0.58 [−1.84, +0.69] | +0.12 [−1.07, +1.34] | +0.31 [−1.00, +1.51] | fails (all seeds) |
 
-  At (1,16) the gain is large in two seeds and absent in the third. h11 found the same instability at this cell, with a gain of 4.7 to 20.4 points depending on the seed, measured there with a different probe.
+  At (1,16) the gain is large in two seeds and absent in the third. layerwise_probe found the same instability at this cell, with a gain of 4.7 to 20.4 points depending on the seed, measured there with a different probe.
 - **The prefix pays in POS.** At (3,64), MIPIC's prefix holds 5.16 points less POS than MRL's (−3.55 to −6.24, every CI below zero), and gains no sentiment in return. At (2,32) it holds 1.17 points less on average, but not consistently: two seeds are below MRL (−2.64 and −1.53) and seed 42 is above it (+0.65), each CI excluding zero. At (1,16) MIPIC's prefix holds slightly more POS than MRL's (+1.84 on average), so PIC doesn't simply clear POS out of the prefix.
 
 **MRL+SIA** (not part of the rules) behaves like MRL at layers 1–3 and loses less than the PIC models later (POS at layer 6: 94.43 against MRL's 94.97 and MIPIC's 92.72).
