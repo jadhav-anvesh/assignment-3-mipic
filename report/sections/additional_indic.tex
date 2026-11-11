@@ -1,0 +1,97 @@
+% =====================================================================
+% Additional experiment: MRL beyond English
+% Code and results: experiments/indic_experiment/
+% =====================================================================
+\section{Additional Experiment: Does MRL Transfer Beyond English?}
+\label{sec:additional-indic}
+
+\paragraph{Motivation and research question.}
+The five main experiments evaluate MIPIC and its components primarily on
+English-language data.  This leaves open whether the benefit of Matryoshka
+Representation Learning (MRL) is tied to English-specific linguistic
+structure, or whether it also transfers to Indic languages. The question is whether MRL improves
+low-dimensional sentence representations for Indic sentiment classification
+relative to the same frozen TinyBERT encoder.
+
+\paragraph{Data.}
+We use Hindi (\texttt{hi}), Bengali (\texttt{bn}), Gujarati (\texttt{gu}),
+Tamil (\texttt{ta}), and Telugu (\texttt{te}).  The unsupervised MRL corpus
+contains 20,240 Indic sentences.  For each language, the downstream probe
+uses 156 labeled training examples and 998 held-out test examples.  The
+unlabeled MRL corpus is kept separate from the labeled sentiment splits.
+Thus, the result measures transfer from representation training rather than
+supervised training on the evaluation labels.
+
+\paragraph{Models and training.}
+The encoder is TinyBERT General 6L with a 768-dimensional hidden size
+\citep{jiao-etal-2020-tinybert}.  We compare a frozen pretrained TinyBERT
+against TinyBERT fine-tuned with the MRL objective.  MRL uses two independent
+dropout views of the same sentence as a positive pair and a symmetric
+InfoNCE loss at the nested dimensions
+\[
+\{16,32,64,128,256,512,768\}.
+\]
+The run uses five epochs, AdamW with learning rate $2\times10^{-5}$ and
+weight decay $0.01$, batch size 32, maximum sequence length 128, and
+temperature $0.05$.  The reported MRL representation is the final saved
+checkpoint.  Sentence vectors are mean-pooled token representations.
+
+\paragraph{Probe and metrics.}
+For each language and dimension, a logistic-regression classifier is fitted
+on the labeled training split and evaluated on the held-out test split.
+Accuracy measures the fraction of correct predictions, while macro-F1 gives
+equal weight to the three sentiment classes and is therefore more informative
+when class frequencies are imbalanced.  The main comparison is MRL minus the
+frozen baseline at the same dimension and language.
+
+\paragraph{Decision rule.}
+Because this is an exploratory additional experiment and uses one training
+run, we do not claim a statistical significance threshold or a preregistered
+pass/fail result.  We regard the cross-lingual result as positive if MRL
+outperforms frozen TinyBERT in macro-F1 at the full 768 dimensions for all
+five languages, and if its mean macro-F1 is higher at every tested dimension.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Dimension & 16 & 32 & 64 & 128 & 256 & 512 & 768 \\
+\midrule
+Frozen accuracy & .493 & .493 & .493 & .493 & .493 & .504 & .531 \\
+MRL accuracy & .527 & .536 & .539 & .549 & .562 & .571 & .572 \\
+Frozen macro-F1 & .330 & .330 & .330 & .330 & .331 & .362 & .427 \\
+MRL macro-F1 & .455 & .489 & .508 & .530 & .552 & .565 & .569 \\
+\bottomrule
+\end{tabular}
+\caption{Mean IndicSentiment performance over Hindi, Bengali, Gujarati,
+Tamil, and Telugu. Values are averaged over the five language-specific test
+sets; the probe is refit separately for each language and dimension.}
+\label{tab:indic-mrl}
+\end{table}
+
+\paragraph{Results.}
+MRL improves the mean macro-F1 at every dimension, from $0.330$ for frozen
+TinyBERT to $0.455$ at 16 dimensions and $0.569$ at 768 dimensions
+(Table~\ref{tab:indic-mrl}).  Mean accuracy similarly increases from
+$0.493$ for the frozen model at 16--128 dimensions to $0.527$--$0.549$ for
+MRL, and reaches $0.572$ at 768 dimensions.  The improvement is not limited
+to the largest representation: the average macro-F1 gain is approximately
+12.5 points at 16 dimensions and remains approximately 14.2 points at 768
+dimensions.
+
+At 768 dimensions, the MRL macro-F1 gains over frozen TinyBERT are
+22.3 points for Hindi, 13.4 for Bengali, 14.7 for Gujarati, 14.0 for Tamil,
+and 6.5 for Telugu.  Thus, the direction of the effect is consistent across
+all five languages, although its size varies substantially.  The strongest
+full-width result is Hindi, while Telugu shows the smallest gain.
+
+\paragraph{Takeaway.}
+This additional experiment provides preliminary evidence that MRL is not
+effective only because of English-specific hierarchies: it improves Indic
+sentiment probes across five languages and at compact as well as full
+dimensions.  However, the experiment has only one training seed, small
+language-specific labeled splits, and a frozen TinyBERT baseline that is not
+Indic-specialized.  The result should therefore be treated as evidence of
+transferability, not as a controlled claim that MRL is language-independent.
