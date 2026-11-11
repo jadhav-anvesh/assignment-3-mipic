@@ -1,34 +1,92 @@
 % =====================================================================
 % H3: Early, small checkpoints become usable embeddings (owner: ...)
 % Code and results: experiments/layerwise_probe/
-% Target: about one page. Use the same structure as sections/h1_coarse_to_fine.tex.
-% Put figures in figures/ and include them with \includegraphics{name}.
-% Add citations to refs.bib and cite them with \citep{key} or \citet{key}.
-% Put h3 in your labels (for example \label{tab:h3} or \label{fig:h3-layers}) so they do not clash.
 % =====================================================================
 \section{H3: Early, small checkpoints become usable embeddings}
 \label{sec:h3}
 
 \paragraph{Hypothesis.}
-\textit{[What the paper claims and what exactly we test.]}
+MIPIC \citep{mipic2026} adds a progressive information chaining (PIC) loss to Matryoshka representation learning (MRL; \citealp{kusupati2022mrl}).
+PIC chains six checkpoints, written as (layer, width): $(1,16)$, $(2,32)$, $(3,64)$, $(4,256)$, $(5,512)$ and $(6,768)$.
+At each checkpoint it links the first $d$ coordinates of the [CLS] vector at layer $l$ to the next checkpoint.
+The paper therefore implies that the early, small checkpoints become useful embeddings in their own right, but it evaluates only the final layer.
+We test the vector that PIC trains, the raw [CLS] prefix $h_l[0{:}d]$, not \texttt{pooler\_output}.
+The claim is: at $(1,16)$ and $(2,32)$, MIPIC beats both MRL and untrained TinyBERT, and MRL+PIC beats MRL.
+The last comparison isolates PIC, because MRL+PIC differs from MRL only by the PIC loss.
 
 \paragraph{Data.}
-\textit{[Datasets and splits.]}
+The main task is the repository's 3-class tweet sentiment probe data (26,732 training and 3,432 test tweets).
+These are the Kaggle Tweet Sentiment Extraction data, not the TweetEval benchmark.
+As a secondary check, we use the STS-B test split.
+We remove the 118 of its 1,379 pairs that appear in the training corpus, which leaves 1,261 clean pairs.
 
 \paragraph{Models and probes.}
-\textit{[What is compared, and how.]}
+We compare the four trained variants (MRL, MRL+SIA, MRL+PIC, MIPIC), each trained with seeds 42, 1 and 2 and attention KL off, and use their \texttt{best.pt} checkpoints (Section~\ref{sec:setup}).
+Untrained TinyBERT \citep{jiao-etal-2020-tinybert} is the reference, so a gain must be over the backbone and not only over MRL.
+On frozen float32 features, we fit a logistic-regression probe with the same settings as the repository's evaluation script (no feature scaling, $C{=}1$, at most 1,000 iterations) at every layer and width.
+We report the six PIC checkpoints.
 
 \paragraph{Metrics.}
-\textit{[Each metric, with a two-line intuition of what it tells us.]}
+\begin{itemize}
+  \item \textbf{Macro-F1} on the test tweets: the F1 score of each class, averaged with equal weight.
+  \emph{Intuition:} every sentiment class counts the same, so a probe that mostly predicts the most common class scores low even if its accuracy looks fine.
+
+  \item \textbf{Paired bootstrap difference.}
+  For two models A and B, we redraw the 3,432 test tweets with replacement 1,000 times, use the same draws for both models, and compute macro-F1(A) $-$ macro-F1(B) on each draw.
+  We report the observed difference and, as its 95\% CI, the 2.5th and 97.5th percentiles of the redrawn differences.
+  \emph{Intuition:} the CI shows whether the gap would survive a different sample of test tweets of the same size; if it excludes zero, the gap is not luck in the test set.
+  It does not cover seed variation, which the decision rule handles by requiring every seed.
+
+  \item \textbf{STS-B Spearman} ($\times$100): the rank correlation between the gold similarity scores and the cosine similarity of the two sentences' prefixes.
+  \emph{Intuition:} it asks whether the prefix ranks sentence pairs by meaning the way humans do, with no classifier trained on top.
+\end{itemize}
 
 \paragraph{Decision rules.}
-\textit{[The pass/fail rules, fixed before any results.]}
+We fixed the rule before we computed any results.
+In one seed, H3 holds if MIPIC beats both MRL and untrained TinyBERT at $(1,16)$ and $(2,32)$ with 95\% CIs excluding zero, and MRL+PIC also beats MRL at both checkpoints (six comparisons).
+Across seeds, H3 is \emph{supported} if this holds in all three seeds, \emph{partially supported} if it holds in exactly two, and \emph{not supported} otherwise.
+STS-B is descriptive and does not enter the rule.
 
-% One table with the main results:
-% \begin{table}[t] ... \caption{...} \label{tab:h3} \end{table}
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrc@{}}
+\toprule
+$(l,d)$ & Base & MRL & MRL+PIC & MIPIC & MIPIC $-$ MRL & CI excl.\ 0 \\
+\midrule
+$(1,16)$  & 33.88 & 33.97 & 44.62 & \textbf{46.19} & $+$4.69 to $+$20.43 & 3/3 \\
+$(2,32)$  & 57.20 & 56.98 & 61.11 & \textbf{62.06} & $+$4.63 to $+$5.98 & 3/3 \\
+$(3,64)$  & \textbf{68.24} & 67.50 & 67.98 & 67.33 & $-$0.73 to $+$0.53 & 0/3 \\
+$(4,256)$ & \textbf{72.04} & 71.92 & 70.25 & 69.62 & $-$3.37 to $-$1.41 & 3/3 \\
+$(5,512)$ & \textbf{73.07} & 72.26 & 71.02 & 69.90 & $-$3.08 to $-$1.46 & 3/3 \\
+$(6,768)$ & \textbf{73.51} & 71.92 & 70.44 & 69.47 & $-$2.77 to $-$2.02 & 3/3 \\
+\bottomrule
+\end{tabular}%
+}
+\caption{H3: sentiment macro-F1 of a probe on the raw [CLS] prefix $h_l[0{:}d]$ at the six PIC checkpoints $(l,d)$. Model columns are means over seeds 42, 1 and 2; base is a single untrained model. MIPIC $-$ MRL is the paired bootstrap difference, as a range over the three seeds; the last column counts the seeds whose 95\% CI excludes zero. The best value in each row is in bold.}
+\label{tab:h3}
+\end{table}
 
 \paragraph{Results.}
-\textit{[The main numbers and the verdict for each part.]}
+Table~\ref{tab:h3} shows the main results.
+\textbf{H3 is supported}: all six required comparisons pass in 3 of 3 seeds.
+At $(1,16)$, MIPIC is above MRL by $+$4.69 to $+$20.43 points and above untrained TinyBERT by $+$5.02 to $+$20.77; at $(2,32)$, by $+$4.63 to $+$5.98 and $+$4.19 to $+$5.88.
+MRL+PIC beats MRL by $+$6.00 to $+$16.21 at $(1,16)$ and $+$2.48 to $+$6.45 at $(2,32)$; the narrowest case (MRL+PIC at $(2,32)$, seed 42) still has a lower CI bound of $+$0.73.
+The gain is large at $(1,16)$, smaller at $(2,32)$ and gone at $(3,64)$, where no seed shows a significant difference.
+From $(4,256)$ on it reverses: at every remaining checkpoint and in every seed, MIPIC is significantly below MRL (by 1.41 to 3.37 points) and below untrained TinyBERT (by 1.83 to 5.19 points).
+MRL+SIA alone shows no early gain ($-$0.68 to $+$0.15 over MRL at $(1,16)$, with no CI excluding zero), so the effect comes from PIC.
+The direction is stable, but the size varies a lot by seed: MIPIC minus MRL at $(1,16)$ is $+$4.69 in seed 1, $+$11.54 in seed 2 and $+$20.43 in seed 42.
+With attention KL on (seed 42 only), the rule still passes: MIPIC is $+$8.84 [$+$6.98, $+$10.61] above MRL and $+$9.18 [$+$7.28, $+$10.91] above untrained TinyBERT at $(1,16)$, and $+$4.07 and $+$3.98 at $(2,32)$, all with CIs above zero; MRL+PIC has no attention KL term, so its comparisons do not change.
+But the $(1,16)$ gain over MRL falls from $+$20.43 to $+$8.84.
+The early sentiment gain does not carry over to STS-B.
+At $(2,32)$, untrained TinyBERT is best in every seed (59.29, against 37.49 to 52.37 for MIPIC and 37.72 to 48.34 for MRL+PIC).
+At $(1,16)$, MIPIC is above it only in seed 42 (39.97 against 25.19) and below it in seeds 1 and 2 (20.88 and 21.20).
+The probe fit at $(5,512)$ reached the iteration limit for untrained TinyBERT, for MRL+SIA in all seeds and for MRL in seed 2, so that row partly reflects the solver.
+As a side result, at the final layer untrained TinyBERT matches or beats every trained model on this sentiment probe, both on \texttt{pooler\_output} and on the raw [CLS] at $(6,768)$ in Table~\ref{tab:h3}; we return to this in Section~\ref{sec:discussion}.
 
 \paragraph{Takeaway.}
-\textit{[Two or three sentences.]}
+PIC does what its design suggests at the earliest checkpoints: in every seed, the first 16 and 32 [CLS] coordinates of layers 1 and 2 carry more sentiment information than in MRL or the untrained model, and SIA alone does not do this.
+The gain is paid for later in the network, where MIPIC falls below both MRL and the backbone from layer 4 on, and it does not extend to sentence similarity.
+Its size depends strongly on the seed and shrinks with attention KL on, so it should be quoted as a range.

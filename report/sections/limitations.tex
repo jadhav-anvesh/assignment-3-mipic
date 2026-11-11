@@ -18,7 +18,9 @@ Second, with 3 seeds MRL's standard deviation is tiny, so every threshold fell t
 Third, sentiment uses the repository's tweet data rather than TweetEval, and 27 of the 676 probes (sentiment, layer 1) stopped at the iteration limit.
 
 \paragraph{H3.}
-\textit{[To be written.]}
+First, the sentiment probe uses only the Kaggle tweet data, and STS-B is the only second task, so we cannot say whether the early gain holds for other tasks.
+Second, there are only three seeds, and the effect size varies a lot between them (MIPIC minus MRL at $(1,16)$: $+$4.69 to $+$20.43).
+Third, the main runs use attention KL off and the KL-on check covers seed 42 only, and linear probes measure only linearly readable information.
 
 \paragraph{H4.}
 \textit{[To be written.]}
