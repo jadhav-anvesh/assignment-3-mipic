@@ -1,0 +1,24 @@
+experiment:
+  name: e4_gradient_analysis
+  mode: common_768d
+
+model:
+  name: tinybert_6l
+  embedding_dim: 768
+  max_length: 256
+
+data:
+  training_csv: data/final_data.csv
+
+analysis:
+  num_batches: 20
+  objectives:
+    - task_isolated
+    - query_masked
+
+reproducibility:
+  seeds:
+    - 42
+    - 123
+    - 456
+
