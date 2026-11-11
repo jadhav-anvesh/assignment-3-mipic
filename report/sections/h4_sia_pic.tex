@@ -1,34 +1,140 @@
 % =====================================================================
-% H4: SIA is essential and SIA and PIC are synergistic (owner: ...)
+% H4: SIA, PIC, and MIPIC under dimensional truncation.
 % Code and results: experiments/sia_pic/
-% Target: about one page. Use the same structure as sections/h1_coarse_to_fine.tex.
-% Put figures in figures/ and include them with \includegraphics{name}.
-% Add citations to refs.bib and cite them with \citep{key} or \citet{key}.
-% Put h4 in your labels (for example \label{tab:h4} or \label{fig:h4-layers}) so they do not clash.
 % =====================================================================
 \section{H4: SIA is essential and SIA and PIC are synergistic}
 \label{sec:h4}
 
 \paragraph{Hypothesis.}
-\textit{[What the paper claims and what exactly we test.]}
+The paper \citep{mipic2026} claims that semantic information alignment (SIA) is essential for
+preserving information at small embedding widths, that SIA and positional
+information compression (PIC) are synergistic, and that MIPIC remains
+competitive with baselines at full width.  We test these claims rather than
+reproducing a single reported run.  In particular, we compare the SIA effect
+against an MRL+PIC model, estimate the SIA--PIC interaction, and measure the
+MIPIC--MRL gap at 768 dimensions.
 
-\paragraph{Data.}
-\textit{[Datasets and splits.]}
+\paragraph{Experimental setting.}
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Backbone & TinyBERT-6L \citep{jiao-etal-2020-tinybert} \\
+MRL dimensions & 16, 32, 64, 128, 256, 512, 768 \\
+Contrastive corpus & 20,240 sentences \\
+Batch size & 16 \\
+Learning rate & $2\times10^{-5}$ \\
+Optimizer & AdamW (cosine + 10\% warmup) \\
+Epochs & 5 \\
+Maximum length & 256 \\
+Temperature & 0.05 \\
+$\alpha$ & 0.4 \\
+Random seeds & 1, 2, 3, 5, 42 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Evaluation covers TweetEval sentiment, Banking77, and STS-B.  Classification
+uses the full train and test splits; STS-B uses the official GLUE development
+split.
 
-\paragraph{Models and probes.}
-\textit{[What is compared, and how.]}
+The complete matrix uses seeds $\{1,2,3,5,42\}$.  Attention-KL is trained
+both off and on for the SIA-containing models.  MRL and MRL+PIC do not use
+this term, so their KL-on entries are the corresponding KL-off baselines.
+The KL-on and remaining-seed runs use two Tesla T4 GPUs with distributed data
+parallelism (8 examples per GPU, hence global batch size 16).
+
+\paragraph{Models and approaches.}
+We compare four independently initialized variants: MRL
+\citep{kusupati2022mrl}, MRL+SIA, MRL+PIC, and MIPIC (MRL+SIA+PIC).
+MRL supplies the nested representation objective;
+SIA aligns semantic information across views, while PIC supplies the
+positional compression component.  Frozen checkpoint representations are
+probed at every width, so the downstream classifier cannot change the
+representation or hide a loss at a particular prefix.
+
+\paragraph{Parameter selection and robustness.}
+We did not tune hyperparameters separately for individual models or datasets.
+Instead, we fixed the paper's settings before the comparison and applied them
+identically to every arm.  This avoids selecting a favorable configuration
+after inspecting the test scores.  Because GPU time was limited, robustness
+was obtained through five independent seeds, shared data and probe
+protocols, checkpoint reuse and resumable training, and two-GPU execution
+rather than a large hyperparameter sweep.  The final intervals are computed
+over seeds, not over repeated probes of the same checkpoint.  The Kaggle
+notebooks also validate the data schema, compile the code, and run targeted
+tests before launching the long jobs.
 
 \paragraph{Metrics.}
-\textit{[Each metric, with a two-line intuition of what it tells us.]}
+For TweetEval and Banking77 we report test macro-F1.  Macro-F1 gives every
+class equal weight, which is important because both classification tasks
+contain classes with different frequencies.  For STS-B we report Spearman
+correlation between gold similarity scores and cosine similarity of the
+sentence embeddings, multiplied by 100.  Spearman correlation measures
+whether the representation preserves the ranking of semantic similarity
+without requiring a particular score calibration.
 
-\paragraph{Decision rules.}
-\textit{[The pass/fail rules, fixed before any results.]}
-
-% One table with the main results:
-% \begin{table}[t] ... \caption{...} \label{tab:h4} \end{table}
+For each seed, dataset, width, and KL setting, we compute
+\[
+\begin{aligned}
+E_{\mathrm{SIA}}&=\mathrm{MIPIC}-(\mathrm{MRL+PIC}),\\
+I_{\mathrm{SIA,PIC}}&=(\mathrm{MIPIC}-\mathrm{MRL+SIA})\\
+ &\quad-(\mathrm{MRL+PIC}-\mathrm{MRL}),\\
+G_{768}&=\mathrm{MIPIC}_{768}-\mathrm{MRL}_{768}.
+\end{aligned}
+\]
+We report two-sided 95\% Student-$t$ confidence intervals over the five
+seeds.  The SIA claim requires $E_{\mathrm{SIA}}>0$ at 16D and 32D, synergy
+requires $I_{\mathrm{SIA,PIC}}>0$, and full-width parity requires the
+interval for $G_{768}$ to contain zero.
 
 \paragraph{Results.}
-\textit{[The main numbers and the verdict for each part.]}
+The merged result matrix contains 840 score rows and 90 contrast rows.  The
+main five-seed results are shown as mean [95\% confidence interval]:
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Data & KL & SIA effect 16D ($E_{\mathrm{SIA}}$) & Interaction 16D ($I_{\mathrm{SIA,PIC}}$) & Gap 768D ($G_{768}$) \\
+\midrule
+Tweet & off & $-1.05\,[-2.67,0.57]$ & $-0.77\,[-3.20,1.67]$ & $-3.01\,[-4.45,-1.57]$ \\
+Tweet & on  & $-1.95\,[-4.67,0.76]$ & $-0.78\,[-3.85,2.30]$ & $-3.10\,[-3.79,-2.41]$ \\
+Banking77 & off & $-0.79\,[-14.73,13.16]$ & $1.94\,[-10.30,14.17]$ & $-2.72\,[-7.98,2.53]$ \\
+Banking77 & on & $-1.11\,[-11.26,9.04]$ & $-2.86\,[-9.41,3.69]$ & $-2.84\,[-5.87,0.20]$ \\
+STS-B & off & $0.85\,[-1.15,2.84]$ & $\mathbf{2.71\,[0.24,5.19]}$ & $-1.58\,[-6.14,2.98]$ \\
+STS-B & on & $1.84\,[-0.72,4.41]$ & $0.27\,[-1.43,1.96]$ & $\mathbf{-2.01\,[-3.56,-0.47]}$ \\
+\bottomrule
+\end{tabular}
+}%
+\caption{Five-seed H4 contrasts. Each entry is a mean contrast in percentage
+points across five seeds; values in brackets are two-sided 95\% Student-$t$
+confidence intervals.}
+\label{tab:h4}
+\end{table}
+
+The SIA effect is not reliably positive at either 16D or 32D for any
+dataset/KL combination.  Positive interaction is significant only for STS-B
+with KL off at 16D (and, at 32D, the corresponding interaction is also
+positive: $3.08[0.58,5.59]$).  Full-width parity is rejected for Tweet under
+both KL settings and for STS-B with KL on; Banking77 remains compatible with
+zero.  Thus, none of the three claims holds uniformly across tasks and KL
+settings.
+
+\paragraph{System effort.}
+This was a substantial but reproducible system effort: the training runner
+supports four losses, attention-KL switching, checkpointing, two-GPU DDP,
+resumption, and external probing, while the evaluation script combines
+classification and sentence-similarity protocols.  The full training notebooks and merged
+artifacts are retained under \texttt{experiments/sia\_pic/}.
 
 \paragraph{Takeaway.}
-\textit{[Two or three sentences.]}
+Across five seeds, the results do not support the broad claim that SIA is
+essential or that SIA and PIC are generally synergistic.  The evidence is
+dataset- and KL-dependent, and MIPIC is significantly below MRL at full width
+for some settings rather than maintaining universal parity.
