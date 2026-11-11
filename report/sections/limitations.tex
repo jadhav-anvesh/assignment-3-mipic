@@ -23,7 +23,12 @@ Second, there are only three seeds, and the effect size varies a lot between the
 Third, the main runs use attention KL off and the KL-on check covers seed 42 only, and linear probes measure only linearly readable information.
 
 \paragraph{H4.}
-\textit{[To be written.]}
+First, the study uses one TinyBERT-6L backbone, one contrastive corpus, and
+three evaluation datasets, so the conclusions may not transfer to other
+encoders, training data, or tasks.  Second, five seeds provide more robust
+estimates than a single run but still leave wide intervals for some
+classification contrasts, and the compute budget did not permit a systematic
+hyperparameter sweep.
 
 \paragraph{H5.}
 \textit{[To be written.]}
