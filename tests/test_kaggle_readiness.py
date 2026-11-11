@@ -10,14 +10,6 @@ def test_canonical_requirements_file_is_used() -> None:
     assert not (ROOT / "requirements-lock.txt").exists()
 
 
-def test_kaggle_run_instructions_are_available() -> None:
-    # Readiness is validated from the executable README; the notebook is
-    # optional and must never be a required runtime/test dependency.
-    text = (ROOT / "kaggle" / "README.md").read_text(encoding="utf-8")
-    assert "run_experiments.py --model all --skip-existing" in text
-    assert "/kaggle/working/mipic_results" in text
-
-
 def test_runner_supports_kaggle_output_and_resume() -> None:
     text = (ROOT / "run_experiments.py").read_text(encoding="utf-8")
     assert "MIPIC_OUTPUT_DIR" in text
@@ -30,12 +22,6 @@ def test_train_loop_supports_epoch_checkpoints() -> None:
     text = (ROOT / "train.py").read_text(encoding="utf-8")
     assert "epoch_callback" in text
     assert "start_epoch" in text
-
-
-def test_kaggle_smoke_and_full_run_defaults_are_documented() -> None:
-    readme = (ROOT / "kaggle" / "README.md").read_text(encoding="utf-8")
-    assert "MIPIC_MAX_BATCHES=3" in readme
-    assert "5-epoch" in readme
 
 
 def test_train_has_no_unconditional_scheduler_step_before_optimizer_step() -> None:
@@ -60,29 +46,10 @@ def test_mipic_ddp_does_not_need_unused_parameter_detection() -> None:
     assert "model.module" not in block
 
 
-def test_kaggle_bootstrap_prefers_readiness_capable_archive() -> None:
-    source = (ROOT / "kaggle" / "kaggle_bootstrap.py").read_text(encoding="utf-8")
-    assert "has_notebook" in source
-    assert "_safe_extract_flat" in source
-
-
 def test_smoke_run_can_optionally_exercise_checkpoint_and_evaluation() -> None:
     """MIPIC_MAX_BATCHES alone skips checkpoint+eval; the opt-in flag keeps them."""
     text = (ROOT / "run_experiments.py").read_text(encoding="utf-8")
     assert "MIPIC_SMOKE_FULL_PIPELINE" in text
-    readme = (ROOT / "kaggle" / "README.md").read_text(encoding="utf-8")
-    assert "MIPIC_SMOKE_FULL_PIPELINE=1" in readme
-    assert "--eval-only" in readme
-
-
-def test_kaggle_procedure_avoids_cross_cell_shell_state() -> None:
-    """No `!export` in one cell followed by `!python` in another."""
-    import json
-
-    notebook = json.loads((ROOT / "MIPIC_Kaggle_FINAL.ipynb").read_text(encoding="utf-8"))
-    for cell in notebook["cells"]:
-        source = "".join(cell["source"])
-        assert "!export" not in source
 
 
 def test_ddp_setup_rejects_out_of_range_local_rank_with_a_useful_message() -> None:
@@ -95,23 +62,6 @@ def test_ddp_setup_rejects_out_of_range_local_rank_with_a_useful_message() -> No
     assert "CUDA_VISIBLE_DEVICES" in block
     # The guard must precede the call that would otherwise raise.
     assert block.index("local_rank >= visible") < block.index("torch.cuda.set_device(local_rank)")
-
-
-def test_notebook_mode_switch_sets_cuda_visible_devices_in_both_branches() -> None:
-    """Switching RUN_MODE must fully override the previous mode's device mask."""
-    import json
-
-    notebook = json.loads((ROOT / "MIPIC_Kaggle_FINAL.ipynb").read_text(encoding="utf-8"))
-    cell = next(
-        "".join(c["source"])
-        for c in notebook["cells"]
-        if c["cell_type"] == "code" and "RUN_MODE = " in "".join(c["source"])
-    )
-    assert cell.count("CUDA_VISIBLE_DEVICES") >= 3
-    assert '"CUDA_VISIBLE_DEVICES"] = "0,1"' in cell   # ddp branch widens it back
-    assert '"CUDA_VISIBLE_DEVICES"] = "0"' in cell     # single branch narrows it
-    # The GPU-count check must query a subprocess, not the cached in-kernel value.
-    assert "subprocess.run" in cell and "torch.cuda.device_count()" in cell
 
 
 def test_truncated_runs_are_labelled_in_output_and_in_the_results_file() -> None:
@@ -136,11 +86,6 @@ def test_there_is_exactly_one_configuration_and_no_presets() -> None:
                  "MIPIC_SIA_CONTEXTUAL_MASK", "MIPIC_CKA_DTYPE",
                  "MIPIC_PIC_LR_MULTIPLIER", "MIPIC_MAX_GRAD_NORM"):
         assert gone not in text, f"{gone} should have been removed"
-
-    import json
-    notebook = json.loads((ROOT / "MIPIC_Kaggle_FINAL.ipynb").read_text(encoding="utf-8"))
-    for cell in notebook["cells"]:
-        assert "MIPIC_PRESET" not in "".join(cell["source"])
 
 
 def test_the_shipped_corpus_and_probe_are_the_paper_ones() -> None:

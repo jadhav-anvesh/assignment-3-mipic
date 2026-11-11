@@ -37,10 +37,6 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 ├── prepare_training_corpus.py    # Builds data/final_data.csv
 ├── tests/                        # Unit, integration, protocol and attention-KL switch tests
 │
-├── kaggle/
-│   ├── README.md                 # Kaggle (2x T4) setup and run instructions
-│   └── kaggle_bootstrap.py
-│
 ├── experiments/layerwise_probe/  # Probing experiments
 │   ├── FINDINGS.md               # Findings 1 to 9 with numbers, CIs and caveats
 │   ├── CROSS_SEED.md             # Cross-seed tables (seeds 42, 1, 2)
@@ -103,7 +99,6 @@ For a quick smoke test:
 MIPIC_MAX_BATCHES=3 python run_experiments.py --model mipic
 ```
 
-For Kaggle / 2-GPU execution, see [`kaggle/README.md`](kaggle/README.md).
 
 ## Outputs
 
