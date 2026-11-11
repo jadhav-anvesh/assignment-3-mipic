@@ -50,7 +50,7 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 │   ├── subset_probe.py           # Prefix versus other and random coordinate subsets
 │   ├── bootstrap*.py             # Paired bootstrap CIs between models, KL-on pairs, SIA x PIC
 │   ├── probe_size.py, probe_tuned*.py, probe_knn.py, selection_probe.py,
-│   │   pooler_*.py, refit_check.py, overlap_check.py, check_padding.py,
+│   │   pooler_*.py,
 │   │   weight_drift.py           # Checks behind Findings 1 and 9
 │   ├── aggregate_seeds.py        # Builds CROSS_SEED.md and results/cross_seed_*.csv
 │   ├── test_load_encoder.py      # Tests for load_encoder
