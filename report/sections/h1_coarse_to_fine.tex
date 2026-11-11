@@ -1,0 +1,133 @@
+% =====================================================================
+% H1: coarse-to-fine prefixes (owner: ...)
+% Code and results: experiments/coarse_to_fine/
+% =====================================================================
+\section{H1: Matryoshka prefixes are coarse-to-fine}
+\label{sec:h1}
+
+\paragraph{Hypothesis.}
+MIPIC \citep{mipic2026} builds on Matryoshka representation learning (MRL; \citealp{kusupati2022mrl}).
+The paper claims that the prefixes of the embedding are coarse-to-fine:
+``low-dimensional cores capture a coarse semantic skeleton, while higher-dimensional spaces progressively incorporate finer details'' (\S3.2.2).
+The paper reports only the score at each width, so this claim has not been tested.
+We define \emph{coarse} and \emph{fine} as two levels of one official label hierarchy on the same sentences, and test the sentence embedding $z$ (\texttt{pooler\_output}) in two parts:
+\textbf{H1-a}: the prefix $z_{[0:d]}$ holds more label information than $d$ random coordinates;
+\textbf{H1-b}: beyond what a random order gives, the prefix favours coarse labels over fine ones.
+
+\paragraph{Data.}
+\textbf{TREC} \citep{li-roth-2002-learning}: 5,452 training and 500 test questions, with 6 coarse and 50 fine answer types.
+\textbf{GoEmotions} \citep{demszky-etal-2020-goemotions}: Reddit comments with exactly one label (36,308 train, 4,590 test).
+We use the official mapping of the 28 emotions to 7 Ekman classes and then to 4 sentiment classes.
+This gives three nested levels.
+
+\paragraph{Models and probes.}
+We probe the four trained variants (MRL, MRL+SIA, MRL+PIC, MIPIC; 3 seeds each) and untrained TinyBERT \citep{jiao-etal-2020-tinybert}.
+The untrained pooler is a random projection, so its coordinates have no order.
+This makes untrained TinyBERT a null model, and every test must fail on it.
+For each width $d\in\{16,32\}$, we fit a logistic-regression probe on the first $d$ coordinates and report test macro-F1 $S(d)$.
+We compare the prefix with 10 random nested coordinate orders.
+A cosine $k$NN probe ($k{=}10$) checks that the results do not depend on the fitted classifier.
+
+\paragraph{Metrics.}
+$S(d)$ is the test macro-F1 of a probe on $d$ coordinates.
+$S_{\text{chance}}$ is the macro-F1 of a classifier that guesses each label at its training frequency.
+\emph{Intuition:} $S_{\text{chance}}$ is the score of a model that ignores the sentence and only knows how common each label is.
+It is the floor that any useful set of coordinates must rise above.
+\begin{itemize}
+  \item \textbf{Retention}
+  \[
+    R(d)=\frac{S(d)-S_{\text{chance}}}{S(768)-S_{\text{chance}}}.
+  \]
+  $R{=}0$ means the $d$ coordinates are no better than chance, and $R{=}1$ means they are as good as all 768.
+  $R$ puts label levels with different chance scores (6 vs.\ 50 classes) on one scale.
+  \emph{Intuition:} $R(d)$ is the share of the full embedding's knowledge about a label (above guessing) that the first $d$ coordinates already carry.
+  It describes how the information is spread over the coordinates, not how good the embedding is: a weak model can still have a high $R$.
+
+  \item \textbf{Prefix advantage (H1-a).}
+  \[
+    z(d)=\frac{S_{\text{prefix}}(d)-\overline{S}_{\text{rand}}(d)}{\sigma_{\text{rand}}(d)},
+  \]
+  where $\overline{S}_{\text{rand}}$ and $\sigma_{\text{rand}}$ are the mean and standard deviation over the 10 random orders.
+  $z$ is the distance of the prefix from the random orders in standard deviations.
+  \emph{Intuition:} $z$ asks whether the first $d$ coordinates are special or just any $d$ coordinates.
+  A large $z$ means training put more label information at the front than a random choice of the same size holds.
+  H1-a holds if $z>2$ for MIPIC and $z\le 2$ for the untrained model.
+
+  \item \textbf{Coarse-to-fine index (H1-b).}
+  H1-b asks whether the first $d$ coordinates keep relatively more of the coarse information than of the fine information.
+  We test it in two steps, on the same test sentences for both label levels.
+
+  \emph{Step 1: the coarse bias of an order.}
+  For one coordinate order, we probe the first $d$ coordinates for the coarse labels and for the fine labels, and take the difference of the two retentions:
+  \[
+    \text{CFI}(d)=R_{\text{coarse}}(d)-R_{\text{fine}}(d).
+  \]
+  $\text{CFI}>0$ means the $d$ coordinates keep a larger share of the coarse information than of the fine information.
+
+  \emph{Step 2: compare with random orders.}
+  $\text{CFI}>0$ alone does not support H1: a coarse task is easier, so even $d$ random coordinates keep more of it.
+  We therefore compute CFI for each of the 10 random orders (each uses the same coordinates for both levels) and subtract their mean:
+  \[
+    \Delta\text{CFI}(d)=\text{CFI}_{\text{prefix}}(d)-\overline{\text{CFI}}_{\text{rand}}(d).
+  \]
+  For example, if the prefix has $\text{CFI}=0.40$ and the random orders have a mean of $0.30$, then $\Delta\text{CFI}=0.10$: the prefix favours coarse labels more than chance does.
+  If the prefix is better than random by the same amount on both levels, $\Delta\text{CFI}=0$: the prefix is better, but not \emph{coarse first}.
+  \emph{Intuition:} CFI measures how much an order leans towards coarse labels, and $\Delta\text{CFI}$ removes the lean that comes only from coarse labels being easier.
+  What is left is the lean that the prefix order itself adds, which is the coarse-to-fine claim.
+
+  \emph{Pass rule.}
+  H1-b holds if $\Delta\text{CFI}$ for MIPIC is \emph{reliably} above 0: it stays above 0 in at least 97.5\% of 1,000 random redraws of the test sentences.
+  The untrained model has no order, so its $\Delta$CFI should be about 0.
+  We use one label pair for TREC (coarse--fine) and three for GoEmotions (sentiment--fine, Ekman--fine, sentiment--Ekman).
+  To see whether SIA and PIC add to the order that MRL already gives, we also test the paired difference $\Delta\text{CFI}_{\text{MIPIC}}-\Delta\text{CFI}_{\text{MRL}}$ for each seed.
+\end{itemize}
+
+\paragraph{Decision rules.}
+We fixed all rules before we computed any results.
+A part passes only if it holds at $d\in\{16,32\}$, in all 3 seeds and on both datasets.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+\multicolumn{5}{@{}l}{\emph{(a) H1-a: prefix vs.\ random, $z$ at $d{=}16$}} \\
+Data & Level & MIPIC $z$ & seeds$>$2 & Base $z$ \\
+\midrule
+TREC  & coarse    & 2.30 & 2/3 & 0.27 \\
+TREC  & fine      & 1.25 & 0/3 & $-$1.67 \\
+GoEmo & sentiment & 4.01 & 3/3 & 2.07 \\
+GoEmo & Ekman     & 3.18 & 3/3 & 0.42 \\
+GoEmo & fine      & 3.48 & 3/3 & $-$0.54 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{(b) H1-b: $\Delta$CFI at $d{=}16$ (seeds reliably $>$0)}} \\
+Pair & & MIPIC & MRL & Base \\
+\midrule
+TREC  & coarse--fine & +.063 (1/3) & +.026 (0/3) & +.066 \\
+GoEmo & sent.--fine  & +.106 (2/3) & +.119 (3/3) & +.084$^\dagger$ \\
+GoEmo & Ekman--fine  & +.063 (3/3) & +.065 (2/3) & +.030 \\
+\bottomrule
+\end{tabular}
+\caption{H1 at $d{=}16$ on \texttt{pooler\_output} (mean of 3 seeds; base is a single untrained model). $^\dagger$The base value is reliably different from 0. The results at $d{=}32$ are weaker for all cells.}
+\label{tab:h1}
+\end{table}
+
+\paragraph{Results.}
+Table~\ref{tab:h1} shows the main results.
+\textbf{H1-a holds only partly.}
+On GoEmotions at $d{=}16$, the MIPIC prefix is 3--4 standard deviations above the random orders in every seed (+0.03 to +0.07 macro-F1), and the $k$NN probe agrees.
+On TREC, it passes in at most 2 of 3 seeds.
+At $d{=}32$, the advantage shrinks on both datasets.
+All four trained variants show almost the same advantage, so the ordering comes from the MRL loss, not from SIA or PIC.
+\textbf{H1-b is not supported.}
+$\Delta$CFI passes in only 1 of the 8 pair--width cells (GoEmotions Ekman--fine, $d{=}16$).
+The untrained null model shows a $\Delta$CFI of similar size, and it is reliably different from 0 in 5 of the 8 cells.
+A positive $\Delta$CFI therefore does not show a learned coarse-to-fine order.
+The paired difference $\Delta\text{CFI}_{\text{MIPIC}}-\Delta\text{CFI}_{\text{MRL}}$ is never reliably positive (1 of 24 seed cells), and it is negative on average in 7 of the 8 cells.
+\textbf{Side result.} At full width, untrained TinyBERT gives the highest probe F1 at every label level (e.g.\ TREC fine 0.70 vs.\ 0.57 for MIPIC).
+
+\paragraph{Takeaway.}
+The MRL prefix is ordered by usefulness for the training objective: on GoEmotions, the first 16 coordinates carry more information than random ones.
+But we find no evidence that these coordinates hold coarse information first.
+SIA and PIC add no further ordering.

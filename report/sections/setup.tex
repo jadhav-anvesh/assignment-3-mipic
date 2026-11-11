@@ -1,0 +1,14 @@
+% =====================================================================
+% Shared setup (owner: ...)
+% Write once; every hypothesis section refers here with Section~\ref{sec:setup}.
+% =====================================================================
+\section{Shared Setup}
+\label{sec:setup}
+% TODO:
+% - Base model: TinyBERT-6L-768D \citep{jiao-etal-2020-tinybert}.
+% - Training: data/final_data.csv (20,240 sentences), 5 epochs, lr 2e-5, batch 16, max length 256.
+% - Variants: MRL, MRL+SIA, MRL+PIC, MIPIC; seeds 42, 1, 2; attention KL off; best.pt checkpoints.
+% - Untrained TinyBERT as the null model. Its pooler is random, so z is a random
+%   projection of the layer-6 [CLS] vector.
+% - Sentence embedding z = pooler_output; probes.
+\textit{[Shared setup: to be written.]}

@@ -1,0 +1,18 @@
+# LaTeX build files: never commit these.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.xdv
+# The compiled PDF changes on every build and causes merge conflicts.
+main.pdf
