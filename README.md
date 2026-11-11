@@ -22,42 +22,30 @@ A Logistic Regression probe is fitted on the frozen encoder representations at e
 
 ## Repository structure
 
-The repository has two parts. The MIPIC implementation (models, losses, training, evaluation and tests) matches [MIPIC_hypotheses](https://github.com/maverick-0215/MIPIC_hypotheses). `experiments/layerwise_probe/` holds the probing experiments that test the paper's claims. The POS-probe, Indic and routing experiments from the original course repository, [MIPIC_LEXIS_A1](https://github.com/ManojAnaparthi/MIPIC_LEXIS_A1), are not included.
+The repository contains the shared MIPIC implementation and a collection of controlled experiments that test the paper's claims and extensions. The implementation (models, losses, training, evaluation and tests) matches [MIPIC_hypotheses](https://github.com/maverick-0215/MIPIC_hypotheses). The experiment folders contain the additional analyses, ablations and cross-seed evaluations described in the project report.
 
 ```text
 .
-├── README.md                     # This file
-│
 ├── data/                         # Training corpus and tweet sentiment probe splits
-├── models/                       # TinyBERT wrappers: MRL, MRL+SIA, MRL+PIC, MIPIC
+├── experiments/
+│   ├── coarse_to_fine/           # Coarse-to-fine hierarchy experiment
+│   ├── dimension_routing/        # MRL dimension-routing experiments
+│   ├── indic_experiment/         # MRL transfer to Hindi, Bengali, Gujarati, Tamil and Telugu
+│   ├── layerwise_probe/          # Layer-wise and width-wise probing experiments
+│   ├── progressive_dimension_schedule/ # Progressive PIC layer-dimension schedules
+│   ├── sia_pic/                  # Five-seed SIA, PIC and MIPIC ablations
+│   └── syntax_preservation/      # POS and sentiment probes for syntax preservation
 ├── losses/                       # MRL, SIA and PIC losses, distributed helpers
-├── train.py                      # Training routines
-├── evaluate.py                   # Logistic-regression probe evaluation
-├── run_experiments.py            # Main experiment runner (MIPIC_* environment variables)
-├── prepare_training_corpus.py    # Builds data/final_data.csv
+├── models/                       # TinyBERT wrappers: MRL, MRL+SIA, MRL+PIC, MIPIC
+├── report/                       # Project report and figures
 ├── tests/                        # Unit, integration, protocol and attention-KL switch tests
-│
-├── experiments/layerwise_probe/  # Probing experiments
-│   ├── FINDINGS.md               # Findings 1 to 8 with numbers, CIs and caveats
-│   ├── CROSS_SEED.md             # Cross-seed tables (seeds 42, 1, 2)
-│   ├── train_all.ps1 / .sh       # Train the four arms for one seed (attention KL pinned off)
-│   ├── train_kl_on.py            # Train MRL+SIA or MIPIC with attention KL forced on
-│   ├── analyze_seed.ps1 / .sh    # Feature extraction, probe grid, STS-B and subset probes per seed
-│   ├── load_encoder.py           # Load a bare encoder from any checkpoint format
-│   ├── extract_cls.py            # [CLS] per layer and pooler output, float32
-│   ├── probe_grid.py             # Probe on every (layer, width) cell
-│   ├── sts_eval.py               # Zero-shot STS-B cosine Spearman per cell
-│   ├── subset_probe.py           # Prefix versus other and random coordinate subsets
-│   ├── bootstrap*.py             # Paired bootstrap CIs between models, KL-on pairs, SIA x PIC
-│   ├── probe_size.py             # Probe-size check (Finding 1, check 5); load_pooler for probe_knn.py
-│   ├── probe_knn.py              # kNN check (Finding 1, check 7)
-│   ├── aggregate_seeds.py        # Builds CROSS_SEED.md and results/cross_seed_*.csv
-│   ├── test_load_encoder.py      # Tests for load_encoder
-│   ├── results/                  # Per-model result tables (tracked)
-│   ├── runs/seed{42,1,2}/        # KL-off runs: result tables tracked, checkpoints and logs local
-│   └── runs_kl/seed42/           # KL-on runs of MRL+SIA and MIPIC
-│
-└── requirements.txt              # Canonical dependencies for all environments
+├── .gitignore
+├── evaluate.py                   # Logistic-regression probe evaluation
+├── prepare_training_corpus.py    # Builds data/final_data.csv
+├── README.md                     # This file
+├── requirements.txt              # Canonical dependencies for all environments
+├── run_experiments.py            # Main experiment runner (MIPIC_* environment variables)
+└── train.py                      # Training routines
 ```
 
 **Attention KL.** `MIPIC_ATTENTION_KL` switches the SIA attention-KL term (Eq. 6) on or off. It is on by default, as in the paper. The `layerwise_probe` runs were made with it off, so `experiments/layerwise_probe/train_all.*` set `MIPIC_ATTENTION_KL=0`; pass `-AttentionKL` / `--attention-kl` to train the SIA arms with it on.
@@ -148,3 +136,17 @@ Phung Gia Huy et al. *MIPIC: Matryoshka Representation Learning via Self-Distill
 ## Project report
 
 The accompanying project report contains the reproduction methodology, dataset description, implementation comparison, ablation results, and discussion of the observed behaviour.
+
+## Contributions
+
+The experimental contributions are organized by experiment folder:
+
+| Experiment | Contributors |
+|---|---|
+| `experiments/coarse_to_fine/` | Nakka Eshwar Karthikeya and Mamilla Aniruddh Reddy |
+| `experiments/dimension_routing/` | Thoutam Dhruthika |
+| `experiments/indic_experiment/` | Burra Saharsh |
+| `experiments/layerwise_probe/` | Jadhav Anvesh |
+| `experiments/progressive_dimension_schedule/` | Chinthala Shivamani |
+| `experiments/sia_pic/` | A V S Manoj |
+| `experiments/syntax_preservation/` | Ogiboyina Akash |
