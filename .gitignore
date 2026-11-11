@@ -30,7 +30,7 @@ checkpoints/
 wandb/
 tensorboard/
 experiments/layerwise_probe/features/
-# H2 (experiments/syntax_preservation): downloaded UD EWT files and extracted features stay local; result tables are tracked.
+# experiments/syntax_preservation: downloaded UD EWT files and extracted features stay local; result tables are tracked.
 experiments/syntax_preservation/data/
 experiments/syntax_preservation/features/
 !experiments/syntax_preservation/results/
