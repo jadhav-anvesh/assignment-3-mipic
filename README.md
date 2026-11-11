@@ -38,7 +38,7 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 ├── tests/                        # Unit, integration, protocol and attention-KL switch tests
 │
 ├── experiments/layerwise_probe/  # Probing experiments
-│   ├── FINDINGS.md               # Findings 1 to 9 with numbers, CIs and caveats
+│   ├── FINDINGS.md               # Findings 1 to 8 with numbers, CIs and caveats
 │   ├── CROSS_SEED.md             # Cross-seed tables (seeds 42, 1, 2)
 │   ├── train_all.ps1 / .sh       # Train the four arms for one seed (attention KL pinned off)
 │   ├── train_kl_on.py            # Train MRL+SIA or MIPIC with attention KL forced on
@@ -49,9 +49,8 @@ The repository has two parts. The MIPIC implementation (models, losses, training
 │   ├── sts_eval.py               # Zero-shot STS-B cosine Spearman per cell
 │   ├── subset_probe.py           # Prefix versus other and random coordinate subsets
 │   ├── bootstrap*.py             # Paired bootstrap CIs between models, KL-on pairs, SIA x PIC
-│   ├── probe_size.py, probe_tuned*.py, probe_knn.py, selection_probe.py,
-│   │   pooler_*.py,
-│   │   weight_drift.py           # Checks behind Findings 1 and 9
+│   ├── probe_size.py             # Probe-size check (Finding 1, check 5); load_pooler for probe_knn.py
+│   ├── probe_knn.py              # kNN check (Finding 1, check 7)
 │   ├── aggregate_seeds.py        # Builds CROSS_SEED.md and results/cross_seed_*.csv
 │   ├── test_load_encoder.py      # Tests for load_encoder
 │   ├── results/                  # Per-model result tables (tracked)

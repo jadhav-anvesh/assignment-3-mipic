@@ -1,6 +1,0 @@
-model,checkpoint,val_macro_f1
-base,,63.158
-mrl_s42,h11_probe/runs/seed42/checkpoints/mrl/best.pt,65.367
-mrl_pic_s42,h11_probe/runs/seed42/checkpoints/mrl_pic/best.pt,64.563
-mipic_s42,h11_probe/runs/seed42/checkpoints/mipic/best.pt,62.588
-mrl_sia_s42,h11_probe/runs/seed42/checkpoints/mrl_sia/best.pt,65.64

@@ -112,7 +112,7 @@ Files: `results/cross_seed_interaction.csv`
 
 ## 5. Finding 1: base minus each model at the pooler
 
-Decision rule verdict: **OVERTURNED**. Cells where a trained model is significantly above base: seed 42: tuned 3000 rows mrl_sia 16D; seed 1: tuned 1000 rows mrl_pic 16D; seed 2: none. Default probe: paired bootstrap per seed. Tuned probe at full size: paired bootstrap; at 250, 1,000 and 3,000 rows: 'above' means ahead on all 5 subsets. Second table: counts of cells where base is significantly above, where the model is, and the total.
+Default probe only (the tuned probe of check 6 was removed in the final cleanup; the pre-registered verdict is in FINDINGS.md, Finding 1). Cells where a trained model is significantly above base: seed 42: none; seed 1: none; seed 2: none. Default probe: paired bootstrap per seed. Second table: counts of cells where base is significantly above, where the model is, and the total.
 
 | model | dim | default s42 | default s1 | default s2 |
 |---|---|---|---|---|
@@ -148,16 +148,12 @@ Decision rule verdict: **OVERTURNED**. Cells where a trained model is significan
 | probe | probe rows | seed 42: base above / model above / cells | seed 1: base above / model above / cells | seed 2: base above / model above / cells |
 |---|---|---|---|---|
 | default | 26732 | 19 / 0 / 28 | 11 / 0 / 28 | 20 / 0 / 28 |
-| tuned | 250 | 12 / 0 / 12 | 9 / 0 / 12 | 12 / 0 / 12 |
-| tuned | 1000 | 11 / 0 / 12 | 8 / 1 / 12 | 12 / 0 / 12 |
-| tuned | 3000 | 11 / 1 / 12 | 10 / 0 / 12 | 12 / 0 / 12 |
-| tuned | 26732 | 10 / 0 / 12 | 7 / 0 / 12 | 11 / 0 / 12 |
 
 Files: `results/cross_seed_finding1.csv`
 
-## 5b. Finding 1 checks 7 and 8: kNN and the selection probe
+## 5b. Finding 1 check 7: kNN
 
-kNN: base minus model, macro-F1, mean ± std [min, max] and sign agreement across seeds (no CIs). Selection probe: base scores 63.16 in every seed (it has no training seed).
+kNN: base minus model, macro-F1, mean ± std [min, max] and sign agreement across seeds (no CIs).
 
 | metric | k | dim | MRL | MRL+PIC | MIPIC | MRL+SIA |
 |---|---|---|---|---|---|---|
@@ -174,14 +170,7 @@ kNN: base minus model, macro-F1, mean ± std [min, max] and sign agreement acros
 | raw_euc | 50 | 64 | 1.71 ± 0.08 [1.62, 1.76] 3/3 | 2.60 ± 1.64 [0.74, 3.84] 3/3 | 4.56 ± 1.22 [3.59, 5.93] 3/3 | 1.79 ± 0.78 [1.20, 2.67] 3/3 |
 | raw_euc | 50 | 768 | 1.32 ± 0.92 [0.63, 2.36] 3/3 | 3.60 ± 1.99 [1.43, 5.33] 3/3 | 4.93 ± 1.68 [3.25, 6.61] 3/3 | 1.95 ± 0.66 [1.30, 2.62] 3/3 |
 
-| model | seed 42 epoch 1 | seed 1 epoch 1 | seed 2 epoch 1 | epoch 1 minus base (63.16) |
-|---|---|---|---|---|
-| MRL | 65.37 | 66.42 | 64.78 | 2.36 ± 0.84 [1.62, 3.27] 3/3 |
-| MRL+PIC | 64.56 | 66.10 | 62.54 | 1.24 ± 1.79 [-0.62, 2.94] 2/3 |
-| MIPIC | 62.42 | 62.84 | 63.44 | -0.26 ± 0.51 [-0.74, 0.28] 2/3 |
-| MRL+SIA | 65.64 | 65.50 | 65.64 | 2.43 ± 0.08 [2.34, 2.48] 3/3 |
-
-Files: `results/cross_seed_knn.csv`, `results/cross_seed_selection.csv`
+Files: `results/cross_seed_knn.csv`
 
 ## 6. Subset probe: pooler prefix minus mean random subset
 
@@ -207,19 +196,6 @@ Files: `results/cross_seed_subsets.csv`
 | MRL+SIA | 1 | 1 | 1 |
 
 Files: `results/cross_seed_epochs.csv`
-
-## 8. Finding 9: weight drift and both pooler swaps
-
-fwd = trained pooler on base h6 (vs base's pooler); rev = base pooler on trained h6 (vs the model's own pooler output). SD ratios are relative to base's pooler features. F1 differences are seed means.
-
-| model | encoder change % | pooler change % | fwd: trained pooler on base h6, SD ratio | fwd: F1 minus base, 16/64/768 | rev: base pooler on trained h6, SD ratio | rev: F1 minus own, 16/64/768 |
-|---|---|---|---|---|---|---|
-| MRL | 0.57 ± 0.11 [0.45, 0.67] 3/3 | 5.47 ± 1.14 [4.26, 6.51] 3/3 | 0.991 ± 0.004 [0.987, 0.994] 3/3 | +0.29 / -0.22 / +0.00 | 1.807 ± 0.032 [1.776, 1.839] 3/3 | -0.05 / -0.12 / +0.19 |
-| MRL+PIC | 1.07 ± 0.32 [0.88, 1.43] 3/3 | 6.43 ± 2.50 [4.86, 9.32] 3/3 | 0.982 ± 0.005 [0.977, 0.986] 3/3 | +0.04 / -0.26 / +0.02 | 2.159 ± 0.062 [2.094, 2.218] 3/3 | -0.18 / -0.08 / +0.17 |
-| MIPIC | 1.10 ± 0.45 [0.79, 1.62] 3/3 | 6.99 ± 3.07 [4.60, 10.45] 3/3 | 0.982 ± 0.005 [0.976, 0.986] 3/3 | +0.25 / -0.16 / +0.09 | 2.053 ± 0.013 [2.039, 2.065] 3/3 | -0.27 / -0.20 / +0.10 |
-| MRL+SIA | 0.51 ± 0.02 [0.50, 0.54] 3/3 | 4.48 ± 0.11 [4.37, 4.59] 3/3 | 0.997 ± 0.004 [0.993, 1.001] 3/3 | +0.25 / +0.28 / +0.01 | 1.801 ± 0.034 [1.766, 1.833] 3/3 | -0.19 / -0.03 / -0.18 |
-
-Files: `results/cross_seed_finding9.csv`
 
 ## 9. Finding 4: local seed mean minus README, per model per width
 

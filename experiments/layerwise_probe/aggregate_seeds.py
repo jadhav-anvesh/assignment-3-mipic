@@ -20,6 +20,9 @@ Decision rules (stated before the seed 1 and 2 results were looked at):
   OVERTURNED if it happens in two or more seeds. For the tuned probe,
   "significantly above" means the full-size paired bootstrap CI is above zero,
   or the model beats base on every subset at a smaller probe size.
+  The tuned-probe half (check 6) came from probe_tuned.py and
+  probe_tuned_bootstrap.py, which were removed in the final cleanup
+  (recoverable from git history); the full verdict is in FINDINGS.md, Finding 1.
 - H16 early synergy: HOLDS if the raw [CLS] interaction at (1,16) has a CI
   excluding zero and is positive in all three seeds.
 
@@ -230,44 +233,23 @@ def table_finding1(r: Results):
                 disp[f"default s{SEEDS[t]}"] = ci(diff, low, high)
             show.append(disp)
 
-    tuned_show = []
-    for t in SEEDS:
-        tb = r.csv(f"probe_tuned_{t}_bootstrap.csv")
-        ts = r.csv(f"probe_tuned_{t}_summary.csv")
-        for m in MODELS:
-            for d in (16, 64, 768):
-                row = tb[(tb["model"] == name(m, t)) & (tb["dim"] == d)].iloc[0]
-                diff, low, high = -row["diff"], -row["ci_high"], -row["ci_low"]
-                rows.append({"probe": "tuned", "model": m, "dim": d, "seed": SEEDS[t], "size": 26732,
-                             "base_minus_model": diff, "ci_low": low, "ci_high": high,
-                             "model_significantly_above": bool(high < 0), "base_significantly_above": bool(low > 0)})
-                if high < 0:
-                    flagged[t].append(f"tuned full {m} {d}D")
-                for size in (250, 1000, 3000):
-                    s = ts[(ts["model"] == name(m, t)) & (ts["size"] == size) & (ts["dim"] == d)].iloc[0]
-                    above = bool(s["diff_min"] > 0)
-                    rows.append({"probe": "tuned", "model": m, "dim": d, "seed": SEEDS[t], "size": size,
-                                 "base_minus_model": -s["diff_mean"], "ci_low": -s["diff_max"],
-                                 "ci_high": -s["diff_min"], "model_significantly_above": above,
-                                 "base_significantly_above": bool(s["diff_max"] < 0)})
-                    if above:
-                        flagged[t].append(f"tuned {size} rows {m} {d}D")
     table = pd.DataFrame(rows)
+    counts_show = []
     for (probe, size), g in table.groupby(["probe", "size"]):
         disp = {"probe": probe, "probe rows": size}
         for t in SEEDS:
             gs = g[g["seed"] == SEEDS[t]]
             disp[f"seed {SEEDS[t]}: base above / model above / cells"] = (
                 f"{int(gs['base_significantly_above'].sum())} / {int(gs['model_significantly_above'].sum())} / {len(gs)}")
-        tuned_show.append(disp)
+        counts_show.append(disp)
 
-    n_seeds = sum(1 for t in SEEDS if flagged[t])
-    verdict = "HOLDS" if n_seeds == 0 else "WEAKENED" if n_seeds == 1 else "OVERTURNED"
     detail = "; ".join(f"seed {SEEDS[t]}: {', '.join(flagged[t]) if flagged[t] else 'none'}" for t in SEEDS)
-    return table, pd.DataFrame(show), pd.DataFrame(tuned_show), f"**{verdict}**. Cells where a trained model is significantly above base: {detail}."
+    note = ("Default probe only (the tuned probe of check 6 was removed in the final cleanup; the pre-registered "
+            "verdict is in FINDINGS.md, Finding 1). Cells where a trained model is significantly above base: ")
+    return table, pd.DataFrame(show), pd.DataFrame(counts_show), f"{note}{detail}."
 
 
-def table_knn_selection(r: Results):
+def table_knn(r: Results):
     rows = []
     for t in SEEDS:
         k = r.csv(f"probe_knn_{t}.csv")
@@ -284,21 +266,7 @@ def table_knn_selection(r: Results):
         for m in MODELS:
             disp[LABEL[m]] = cell(summarise(g[g["model"] == m]["base_minus_model"].tolist()))
         knn_show.append(disp)
-
-    sel_rows, sel_show = [], []
-    for t in SEEDS:
-        s = r.csv(f"selection_probe_{t}.csv").set_index("model")["val_macro_f1"]
-        sel = json.load(open(r.runs / f"seed{SEEDS[t]}" / "tweeteval_results.json"))["epoch_selection"]
-        for m in MODELS:
-            curve = {c["epoch"]: c["val_macro_f1"] for c in sel[m]["validation_curve"]}
-            sel_rows.append({"seed": SEEDS[t], "model": m, "base": s["base"], "best_pt": s[name(m, t)],
-                             "epoch1": curve[1], "epoch1_minus_base": curve[1] - s["base"]})
-    sel_df = pd.DataFrame(sel_rows)
-    for m in MODELS:
-        g = sel_df[sel_df["model"] == m]
-        sel_show.append({"model": LABEL[m], **{f"seed {s} epoch 1": f"{v:.2f}" for s, v in zip(g["seed"], g["epoch1"])},
-                         "epoch 1 minus base (63.16)": cell(summarise(g["epoch1_minus_base"].tolist()))})
-    return knn, pd.DataFrame(knn_show), sel_df, pd.DataFrame(sel_show)
+    return knn, pd.DataFrame(knn_show)
 
 
 def table_subsets(r: Results):
@@ -326,47 +294,6 @@ def table_epochs(r: Results):
     show["model"] = show["model"].map(LABEL)
     show.columns = ["model"] + [f"seed {c}" for c in show.columns[1:]]
     return table, show
-
-
-def table_finding9(r: Results):
-    rows = []
-    for t in SEEDS:
-        w = r.csv(f"weight_drift_{t}.csv")
-        fwd = r.csv(f"pooler_swap_{t}.csv")
-        rev = r.csv(f"pooler_swap_reverse_{t}.csv")
-        base_f1 = fwd[fwd["pooler_weights"] == "base"].set_index("dim")["f1"]
-        for m in MODELS:
-            n = name(m, t)
-            wm = w[w["model"] == n].set_index("group")
-            f = fwd[fwd["pooler_weights"] == n].set_index("dim")
-            own = rev[(rev["model"] == n) & (rev["readout"] == "own")].set_index("dim")
-            bp = rev[(rev["model"] == n) & (rev["readout"] == "base_pooler")].set_index("dim")
-            rec = {"seed": SEEDS[t], "model": m,
-                   "encoder_change_pct": wm.loc["encoder", "relative_change"] * 100,
-                   "layer1_change_pct": wm.loc["layer1", "relative_change"] * 100,
-                   "layer6_change_pct": wm.loc["layer6", "relative_change"] * 100,
-                   "pooler_change_pct": wm.loc["pooler", "relative_change"] * 100,
-                   "fwd_sd_ratio": f["sd_ratio_to_base"].iloc[0],
-                   "rev_sd_ratio_base_pooler": bp["sd_ratio_to_base"].iloc[0],
-                   "own_sd_ratio": own["sd_ratio_to_base"].iloc[0]}
-            for d in (16, 64, 768):
-                rec[f"fwd_f1_minus_base_{d}"] = f.loc[d, "f1"] - base_f1.loc[d]
-                rec[f"rev_f1_minus_own_{d}"] = bp.loc[d, "f1"] - own.loc[d, "f1"]
-            rows.append(rec)
-    table = pd.DataFrame(rows)
-    show = []
-    for m in MODELS:
-        g = table[table["model"] == m]
-        show.append({"model": LABEL[m],
-                     "encoder change %": cell(summarise(g["encoder_change_pct"].tolist())),
-                     "pooler change %": cell(summarise(g["pooler_change_pct"].tolist())),
-                     "fwd: trained pooler on base h6, SD ratio": cell(summarise(g["fwd_sd_ratio"].tolist()), 3),
-                     "fwd: F1 minus base, 16/64/768": " / ".join(
-                         f"{summarise(g[f'fwd_f1_minus_base_{d}'].tolist())['mean']:+.2f}" for d in (16, 64, 768)),
-                     "rev: base pooler on trained h6, SD ratio": cell(summarise(g["rev_sd_ratio_base_pooler"].tolist()), 3),
-                     "rev: F1 minus own, 16/64/768": " / ".join(
-                         f"{summarise(g[f'rev_f1_minus_own_{d}'].tolist())['mean']:+.2f}" for d in (16, 64, 768))})
-    return table, pd.DataFrame(show)
 
 
 def table_readme(r: Results):
@@ -406,10 +333,9 @@ def main(argv: Optional[List[str]] = None) -> None:
     sts, stss, sts_b, sts_bs = table_sts(r)
     inter, inters, h16_v = table_interaction(r)
     f1, f1s, f1c, f1_v = table_finding1(r)
-    knn, knns, sel, sels = table_knn_selection(r)
+    knn, knns = table_knn(r)
     sub, subs = table_subsets(r)
     ep, eps = table_epochs(r)
-    f9, f9s = table_finding9(r)
     rd, rds = table_readme(r)
 
     sections = [
@@ -428,21 +354,15 @@ def main(argv: Optional[List[str]] = None) -> None:
          f"Decision rule verdict: {h16_v} Across-seed column: mean ± std [min, max] and how many seeds share the "
          "sign of the mean.", [inters], [save(inter, "interaction")]),
         ("5. Finding 1: base minus each model at the pooler",
-         f"Decision rule verdict: {f1_v} Default probe: paired bootstrap per seed. Tuned probe at full size: paired "
-         "bootstrap; at 250, 1,000 and 3,000 rows: 'above' means ahead on all 5 subsets. Second table: counts of "
+         f"{f1_v} Default probe: paired bootstrap per seed. Second table: counts of "
          "cells where base is significantly above, where the model is, and the total.",
          [f1s, f1c], [save(f1, "finding1")]),
-        ("5b. Finding 1 checks 7 and 8: kNN and the selection probe",
-         "kNN: base minus model, macro-F1, mean ± std [min, max] and sign agreement across seeds (no CIs). "
-         "Selection probe: base scores 63.16 in every seed (it has no training seed).",
-         [knns, sels], [save(knn, "knn"), save(sel, "selection")]),
+        ("5b. Finding 1 check 7: kNN",
+         "kNN: base minus model, macro-F1, mean ± std [min, max] and sign agreement across seeds (no CIs).",
+         [knns], [save(knn, "knn")]),
         ("6. Subset probe: pooler prefix minus mean random subset",
          "Macro-F1 points; mean ± std [min, max] and sign agreement.", [subs], [save(sub, "subsets")]),
         ("7. Selected epoch per model per seed (Finding 8)", "", [eps], [save(ep, "epochs")]),
-        ("8. Finding 9: weight drift and both pooler swaps",
-         "fwd = trained pooler on base h6 (vs base's pooler); rev = base pooler on trained h6 (vs the model's own "
-         "pooler output). SD ratios are relative to base's pooler features. F1 differences are seed means.",
-         [f9s], [save(f9, "finding9")]),
         ("9. Finding 4: local seed mean minus README, per model per width",
          "Each cell: seed mean minus the README value, with the across-seed std in brackets.",
          [rds], [save(rd, "readme")]),
