@@ -1,0 +1,87 @@
+{
+  "hypothesis": "The progressive PIC layer-dimension schedule improves small-prefix utility.",
+  "verdict": "not_supported",
+  "mode": "paper",
+  "seeds": [
+    1,
+    2,
+    42
+  ],
+  "epochs": 5,
+  "max_batches": null,
+  "small_prefix_metric": "mean macro-F1 over 16D and 32D",
+  "small_prefix_f1_by_schedule": {
+    "constant_small": 0.5047290966166202,
+    "progressive": 0.5639596394651755,
+    "random_order": 0.5790248423934904,
+    "reversed": 0.5041252285241197
+  },
+  "schedule_definitions": {
+    "progressive": [
+      [
+        1,
+        16,
+        2,
+        32,
+        3,
+        64,
+        4,
+        256,
+        5,
+        512,
+        6,
+        768
+      ]
+    ],
+    "constant_small": [
+      [
+        1,
+        16,
+        2,
+        16,
+        3,
+        16,
+        4,
+        16,
+        5,
+        16,
+        6,
+        16
+      ]
+    ],
+    "reversed": [
+      [
+        1,
+        768,
+        2,
+        512,
+        3,
+        256,
+        4,
+        64,
+        5,
+        32,
+        6,
+        16
+      ]
+    ],
+    "random_order": [
+      [
+        1,
+        16,
+        2,
+        512,
+        3,
+        32,
+        4,
+        256,
+        5,
+        64,
+        6,
+        768
+      ]
+    ]
+  },
+  "history_file": "/kaggle/working/h13_outputs/h13_training_history.csv",
+  "probe_file": "/kaggle/working/h13_outputs/h13_probe_results.csv"
+}
