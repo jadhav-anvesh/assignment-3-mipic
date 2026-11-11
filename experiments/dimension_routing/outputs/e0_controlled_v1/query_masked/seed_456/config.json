@@ -1,0 +1,85 @@
+{
+  "experiment": {
+    "name": "e0_controlled_v1",
+    "dimension_mode": "disjoint"
+  },
+  "model": {
+    "name": "tinybert_6l",
+    "embedding_dim": 768,
+    "max_length": 256
+  },
+  "data": {
+    "training_csv": "data/final_data.csv"
+  },
+  "training": {
+    "epochs": 1,
+    "learning_rate": 2e-05,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "temperature": 0.05,
+    "max_grad_norm": 1.0,
+    "examples_per_task_per_batch": 4,
+    "batch_size": 28,
+    "sampler_type": "balanced",
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  },
+  "objective": {
+    "modes": [
+      "global",
+      "query_masked"
+    ],
+    "loss_reduction": "mean",
+    "negative_sampling": "full_batch"
+  },
+  "dimensions": {
+    "blocks": [
+      [
+        0,
+        16
+      ],
+      [
+        16,
+        32
+      ],
+      [
+        32,
+        64
+      ],
+      [
+        64,
+        128
+      ],
+      [
+        128,
+        256
+      ],
+      [
+        256,
+        512
+      ],
+      [
+        512,
+        768
+      ]
+    ]
+  },
+  "assignment": {
+    "TWEET_EVAL_SENT": 0,
+    "BANKING77": 1,
+    "MRPC": 2,
+    "DEEHAN1866/WIC": 3,
+    "DGEM_FORMAT": 4,
+    "SICK": 5,
+    "STSB": 6
+  },
+  "evaluation": {
+    "classification_metric": "macro_f1",
+    "similarity_metric": "spearman",
+    "evaluate_all_blocks": true,
+    "tune_c": false
+  }
+}
