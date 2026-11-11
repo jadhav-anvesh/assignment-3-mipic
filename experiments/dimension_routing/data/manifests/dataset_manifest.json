@@ -1,0 +1,352 @@
+{
+  "training_data": {
+    "file_path": "data\\final_data.csv",
+    "sha256": "840579825da5776bcb6e4f0c2e915ae2ac91eff40e9a36a3976e583364896e15",
+    "total_rows": 20240,
+    "columns": [
+      "Unnamed: 0",
+      "text",
+      "source"
+    ],
+    "source_counts": {
+      "BANKING77": 3000,
+      "TWEET_EVAL_SENT": 3000,
+      "DEEHAN1866/WIC": 3000,
+      "MRPC": 3000,
+      "DGEM_FORMAT": 3000,
+      "STSB": 2893,
+      "SICK": 2347
+    },
+    "is_valid": true
+  },
+  "eval_datasets": {
+    "TWEET_EVAL_SENT": {
+      "train": {
+        "file_path": "data\\tweet_train.csv",
+        "sha256": "bebac1b93f9bce9401ef9c3dfbf5616e7050ad180be33b8d0fda2971a798a297",
+        "num_samples": 26732,
+        "columns": [
+          "id",
+          "text",
+          "label",
+          "label_text"
+        ]
+      },
+      "test": {
+        "file_path": "data\\tweet_test.csv",
+        "sha256": "165cb22e149ea5a85ee8ce5156cb8838f567df7b0b050cb8407c0ceb406c169c",
+        "num_samples": 3432,
+        "columns": [
+          "id",
+          "text",
+          "label",
+          "label_text"
+        ]
+      },
+      "class_counts": {
+        "1": 10698,
+        "2": 8366,
+        "0": 7668
+      }
+    },
+    "BANKING77": {
+      "train": {
+        "file_path": "data\\eval\\banking77_train.csv",
+        "sha256": "fddcf138d17832df15e670420bdaa64a77d3f1ddb8ddda3e413fb2cdfc260e5a",
+        "num_samples": 10003,
+        "columns": [
+          "text",
+          "label"
+        ]
+      },
+      "test": {
+        "file_path": "data\\eval\\banking77_test.csv",
+        "sha256": "c82ce663b8bda05a9ad1567aeafed6b34b4eca7f3f5f6af16621d886e297eaf3",
+        "num_samples": 3080,
+        "columns": [
+          "text",
+          "label"
+        ]
+      },
+      "class_counts": {
+        "15": 187,
+        "28": 182,
+        "6": 181,
+        "75": 180,
+        "19": 177,
+        "63": 175,
+        "26": 173,
+        "64": 172,
+        "5": 171,
+        "66": 171,
+        "52": 169,
+        "16": 168,
+        "17": 167,
+        "34": 166,
+        "76": 163,
+        "51": 162,
+        "53": 161,
+        "20": 160,
+        "0": 159,
+        "45": 159,
+        "8": 157,
+        "7": 156,
+        "25": 153,
+        "11": 153,
+        "47": 149,
+        "48": 148,
+        "61": 146,
+        "59": 145,
+        "46": 143,
+        "13": 139,
+        "35": 137,
+        "73": 135,
+        "27": 133,
+        "39": 129,
+        "24": 129,
+        "9": 129,
+        "54": 129,
+        "67": 128,
+        "4": 127,
+        "71": 126,
+        "2": 126,
+        "36": 126,
+        "21": 122,
+        "31": 121,
+        "30": 121,
+        "74": 121,
+        "42": 121,
+        "29": 121,
+        "43": 120,
+        "33": 118,
+        "49": 115,
+        "58": 114,
+        "57": 114,
+        "65": 113,
+        "70": 113,
+        "32": 112,
+        "12": 112,
+        "14": 112,
+        "56": 111,
+        "1": 110,
+        "55": 108,
+        "38": 106,
+        "44": 105,
+        "69": 104,
+        "62": 103,
+        "68": 102,
+        "40": 98,
+        "37": 97,
+        "60": 97,
+        "50": 95,
+        "3": 87,
+        "22": 86,
+        "41": 82,
+        "18": 61,
+        "10": 59,
+        "72": 41,
+        "23": 35
+      }
+    },
+    "MRPC": {
+      "train": {
+        "file_path": "data\\eval\\mrpc_train.csv",
+        "sha256": "3dde1f955c025b4e819c3e34f5fb194bdf05bd4ffe4ae847c337f0851427b6ba",
+        "num_samples": 3668,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "test": {
+        "file_path": "data\\eval\\mrpc_test.csv",
+        "sha256": "8a7f5ab249f7448991ff35e11b6ec8bf92a1242a3ac85ebfde9674b549c8ddfd",
+        "num_samples": 408,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "class_counts": {
+        "1": 2474,
+        "0": 1194
+      }
+    },
+    "DEEHAN1866/WIC": {
+      "train": {
+        "file_path": "data\\eval\\wic_train.csv",
+        "sha256": "e59d8ca3f78a9d85a730b88ee45bbd58e6150d6f9285a340575929d94202b9c6",
+        "num_samples": 5428,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "test": {
+        "file_path": "data\\eval\\wic_test.csv",
+        "sha256": "25a4e05a44cbf56489b236d921791b5cabdec53d52dd9513585cf83a7dab7f0f",
+        "num_samples": 638,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "class_counts": {
+        "0": 2714,
+        "1": 2714
+      }
+    },
+    "DGEM_FORMAT": {
+      "train": {
+        "file_path": "data\\eval\\dgem_train.csv",
+        "sha256": "566b9a0c8658503e1f9ec92197bbd689d299799d9df8ebd347a47c878157914e",
+        "num_samples": 23088,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "test": {
+        "file_path": "data\\eval\\dgem_test.csv",
+        "sha256": "8993a06c99887c8c329681783320984b51e7e557f7e583011d3abe2515987093",
+        "num_samples": 2126,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "class_counts": {
+        "0": 14618,
+        "1": 8470
+      }
+    },
+    "SICK": {
+      "train": {
+        "file_path": "data\\eval\\sick_train.csv",
+        "sha256": "ba24ac0930906dd9595c6e7026a3f8ee26bf9d7d2a7e36af835bd7ce5eabe028",
+        "num_samples": 4439,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "test": {
+        "file_path": "data\\eval\\sick_test.csv",
+        "sha256": "0795cdf34fb12e82b9153db17f50571ba95c825124fc8d6e199349ca88ec596b",
+        "num_samples": 4906,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "class_counts": {
+        "1": 2524,
+        "0": 1274,
+        "2": 641
+      }
+    },
+    "STSB": {
+      "train": {
+        "file_path": "data\\eval\\stsb_train.csv",
+        "sha256": "23891a5ce84f739f80579b03de35ce65a696499ab4678d3d4f90e6ff4a82cff6",
+        "num_samples": 5749,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "test": {
+        "file_path": "data\\eval\\stsb_test.csv",
+        "sha256": "75422f84f44b609c564457b843d6024d3b7a479d3a3fab0c3513d12d8a8ebe29",
+        "num_samples": 1500,
+        "columns": [
+          "sentence1",
+          "sentence2",
+          "label"
+        ]
+      },
+      "class_counts": {}
+    }
+  },
+  "leakage_audit": {
+    "TWEET_EVAL_SENT": {
+      "cross_split_leakage": {
+        "task_name": "TWEET_EVAL_SENT",
+        "exact_duplicates": 7,
+        "reversed_duplicates": 0,
+        "is_leakage": true,
+        "informational_reversals": 0
+      },
+      "corpus_overlap_count": 0
+    },
+    "BANKING77": {
+      "cross_split_leakage": {
+        "task_name": "BANKING77",
+        "exact_duplicates": 6,
+        "reversed_duplicates": 0,
+        "is_leakage": true,
+        "informational_reversals": 0
+      },
+      "corpus_overlap_count": 3
+    },
+    "MRPC": {
+      "cross_split_leakage": {
+        "task_name": "MRPC",
+        "exact_duplicates": 0,
+        "reversed_duplicates": 0,
+        "is_leakage": false,
+        "informational_reversals": 0
+      },
+      "corpus_overlap_count": 21
+    },
+    "DEEHAN1866/WIC": {
+      "cross_split_leakage": {
+        "task_name": "DEEHAN1866/WIC",
+        "exact_duplicates": 0,
+        "reversed_duplicates": 0,
+        "is_leakage": false,
+        "informational_reversals": 0
+      },
+      "corpus_overlap_count": 0
+    },
+    "DGEM_FORMAT": {
+      "cross_split_leakage": {
+        "task_name": "DGEM_FORMAT",
+        "exact_duplicates": 10,
+        "reversed_duplicates": 0,
+        "is_leakage": true,
+        "informational_reversals": 0
+      },
+      "corpus_overlap_count": 8
+    },
+    "SICK": {
+      "cross_split_leakage": {
+        "task_name": "SICK",
+        "exact_duplicates": 0,
+        "reversed_duplicates": 0,
+        "is_leakage": false,
+        "informational_reversals": 35
+      },
+      "corpus_overlap_count": 1768
+    },
+    "STSB": {
+      "cross_split_leakage": {
+        "task_name": "STSB",
+        "exact_duplicates": 6,
+        "reversed_duplicates": 3,
+        "is_leakage": true,
+        "informational_reversals": 0
+      },
+      "corpus_overlap_count": 88
+    }
+  }
+}
